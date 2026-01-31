@@ -64,6 +64,9 @@ def build_dim_person(spark: SparkSession):
     logger.info(f"  With profession: {with_profession} ({100 * with_profession / total_count:.1f}%)")
 
     dim_person = dim_person.dropDuplicates(["person_id"])
+    
+    # Filter to only persons with birth year to reduce dataset size
+    dim_person = dim_person.filter(col("birth_year").isNotNull())
     final_count = dim_person.count()
 
     output_path = f"{GOLD_PATH}/dim_person"

@@ -60,9 +60,19 @@ def build_bridge_cast(spark: SparkSession):
     principals_count = principals_df.count()
     logger.info(f"    IMDb principals records: {principals_count}")
 
-    logger.info("  Joining spine with principals...")
+    # Read dim_person to filter only valid persons (those with birth_year)
+    dim_person_path = f"{GOLD_PATH}/dim_person"
+    logger.info(f"  Reading dim_person from: {dim_person_path}")
+    dim_person_df = spark.read.parquet(dim_person_path).select("person_id")
+    person_count = dim_person_df.count()
+    logger.info(f"    Valid persons: {person_count}")
 
+    logger.info("  Joining spine with principals...")
     bridge_cast = spine_df.join(principals_df, on="imdb_id", how="inner")
+    
+    # Filter to only persons that exist in dim_person
+    logger.info("  Filtering to valid persons only...")
+    bridge_cast = bridge_cast.join(dim_person_df, on="person_id", how="inner")
 
     bridge_cast = bridge_cast.select(
         col("movie_id"),
