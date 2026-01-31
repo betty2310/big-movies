@@ -1,12 +1,18 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
 
 interface Props {
   data: {
-    movie_id: number;
+    movie_id: string;
     title: string;
     year: number;
     poster_url: string | null;
@@ -56,7 +62,9 @@ export function TopMoviesCard({ data }: Props) {
                 )}
               </div>
               <div className="space-y-1">
-                <p className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">{movie.title}</p>
+                <p className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                  {movie.title}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {movie.year} • ⭐ {movie.imdb_rating?.toFixed(1) ?? "N/A"}
                 </p>

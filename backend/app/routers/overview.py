@@ -49,7 +49,7 @@ async def get_top_popular(
         """,
         limit,
     )
-    return [dict(r) for r in rows]
+    return [{**dict(r), "movie_id": str(r["movie_id"])} for r in rows]
 
 
 @router.get("/language-distribution")

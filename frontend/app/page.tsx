@@ -74,6 +74,8 @@ export default async function DashboardPage() {
     ml_avg: p.ml_avg * 2,
   }));
 
+  console.log(topMovies);
+
   const genreCoOccurrence_ = genreCoOccurrence.slice(1, 10);
   return (
     <div className="min-h-screen bg-background">

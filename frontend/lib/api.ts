@@ -24,7 +24,7 @@ export interface MoviesPerYear {
 }
 
 export interface TopMovie {
-  movie_id: number;
+  movie_id: string;
   title: string;
   year: number;
   poster_url: string | null;
