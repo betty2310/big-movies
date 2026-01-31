@@ -118,6 +118,64 @@ export interface MPAADistribution {
   avg_rating: number;
 }
 
+// 6. Movies Detail
+export interface MovieDetail {
+  movie_id: number;
+  title: string;
+  original_title: string;
+  year: number;
+  runtime: number | null;
+  mpaa_rating: string | null;
+  plot_summary: string | null;
+  poster_url: string | null;
+  imdb_rating: number | null;
+  imdb_votes: number | null;
+  tmdb_rating: number | null;
+  tomatometer_score: number | null;
+  audience_score: number | null;
+}
+
+export interface MovieGenre {
+  genre_id: number;
+  genre_name: string;
+}
+
+export interface MovieCast {
+  person_id: string;
+  name: string;
+  category: string;
+  ordering: number;
+  characters: string | null;
+}
+
+export interface MovieDetailResponse {
+  movie: MovieDetail;
+  genres: MovieGenre[];
+  cast: MovieCast[];
+}
+
+// 7. Person Detail
+export interface PersonInfo {
+  person_id: string;
+  name: string;
+  birth_year: number | null;
+  primary_profession: string | null;
+}
+
+export interface Filmography {
+  movie_id: number;
+  title: string;
+  year: number;
+  category: string;
+  characters: string | null;
+  imdb_rating: number | null;
+}
+
+export interface PersonDetailResponse {
+  person: PersonInfo;
+  filmography: Filmography[];
+}
+
 export const api = {
   overview: {
     moviesPerYear: (startYear = 1980, endYear = 2025) =>
@@ -160,9 +218,16 @@ export const api = {
     topProlific: (category = "actor", limit = 20) =>
       fetchAPI<TopProlific[]>("/people/top-prolific", { category, limit }),
     topRated: (category = "actor", minFilms = 5, limit = 20) =>
-      fetchAPI<TopRated[]>("/people/top-rated", { category, min_films: minFilms, limit }),
+      fetchAPI<TopRated[]>("/people/top-rated", {
+        category,
+        min_films: minFilms,
+        limit,
+      }),
     actorNetwork: (minCollaborations = 3, limit = 50) =>
-      fetchAPI<ActorNetwork[]>("/people/actor-network", { min_collaborations: minCollaborations, limit }),
+      fetchAPI<ActorNetwork[]>("/people/actor-network", {
+        min_collaborations: minCollaborations,
+        limit,
+      }),
   },
   temporal: {
     runtimeTrend: (startYear = 1950, endYear = 2025) =>
@@ -172,5 +237,13 @@ export const api = {
       }),
     mpaaDistribution: () =>
       fetchAPI<MPAADistribution[]>("/temporal/mpaa-distribution"),
+  },
+  movies: {
+    detail: (movieId: string) =>
+      fetchAPI<MovieDetailResponse>(`/movies/${movieId}`),
+  },
+  person: {
+    detail: (personId: string) =>
+      fetchAPI<PersonDetailResponse>(`/people/${personId}`),
   },
 };

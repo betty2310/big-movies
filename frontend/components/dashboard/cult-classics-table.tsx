@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
+import Link from "next/link";
 
 interface CultClassic {
   movie_id: number;
@@ -27,7 +28,11 @@ export function CultClassicsTable({ data }: Props) {
       <CardContent>
         <div className="space-y-3">
           {data.map((movie) => (
-            <div key={movie.movie_id} className="flex items-center gap-3">
+            <Link
+              key={movie.movie_id}
+              href={`/movies/${movie.movie_id}`}
+              className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted transition-colors"
+            >
               {movie.poster_url ? (
                 <Image
                   src={movie.poster_url}
@@ -51,7 +56,7 @@ export function CultClassicsTable({ data }: Props) {
                   {movie.imdb_votes.toLocaleString()} votes
                 </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </CardContent>

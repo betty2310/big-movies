@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { TopProlific } from "@/lib/api";
+import Link from "next/link";
 
 interface Props {
   actors: TopProlific[];
@@ -27,7 +28,11 @@ export function TopProlificTable({ actors, directors }: Props) {
         <CardContent>
           <div className="space-y-3">
             {actors.map((person, i) => (
-              <div key={person.person_id} className="flex items-center gap-3">
+              <Link
+                key={person.person_id}
+                href={`/people/${person.person_id}`}
+                className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted transition-colors"
+              >
                 <span className="w-6 h-6 rounded-full bg-chart-1/20 flex items-center justify-center text-xs font-bold">
                   {i + 1}
                 </span>
@@ -37,7 +42,7 @@ export function TopProlificTable({ actors, directors }: Props) {
                 <div className="text-sm font-mono text-muted-foreground">
                   {person.movie_count} phim
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </CardContent>
@@ -53,7 +58,11 @@ export function TopProlificTable({ actors, directors }: Props) {
         <CardContent>
           <div className="space-y-3">
             {directors.map((person, i) => (
-              <div key={person.person_id} className="flex items-center gap-3">
+              <Link
+                key={person.person_id}
+                href={`/people/${person.person_id}`}
+                className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted transition-colors"
+              >
                 <span className="w-6 h-6 rounded-full bg-chart-2/20 flex items-center justify-center text-xs font-bold">
                   {i + 1}
                 </span>
@@ -63,7 +72,7 @@ export function TopProlificTable({ actors, directors }: Props) {
                 <div className="text-sm font-mono text-muted-foreground">
                   {person.movie_count} phim
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </CardContent>

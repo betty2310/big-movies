@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
+import Link from "next/link";
 
 interface Props {
   data: {
@@ -34,8 +35,12 @@ export function TopMoviesCard({ data }: Props) {
       <CardContent>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {data.map((movie) => (
-            <div key={movie.movie_id} className="flex flex-col gap-2">
-              <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-muted">
+            <Link
+              key={movie.movie_id}
+              href={`/movies/${movie.movie_id}`}
+              className="flex flex-col gap-2 group"
+            >
+              <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-muted group-hover:ring-2 group-hover:ring-primary transition-all">
                 {movie.poster_url ? (
                   <Image
                     src={movie.poster_url}
@@ -51,7 +56,7 @@ export function TopMoviesCard({ data }: Props) {
                 )}
               </div>
               <div className="space-y-1">
-                <p className="font-medium text-sm leading-tight line-clamp-2">{movie.title}</p>
+                <p className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">{movie.title}</p>
                 <p className="text-xs text-muted-foreground">
                   {movie.year} • ⭐ {movie.imdb_rating?.toFixed(1) ?? "N/A"}
                 </p>
@@ -59,7 +64,7 @@ export function TopMoviesCard({ data }: Props) {
                   {formatVotes(movie.imdb_votes)} lượt đánh giá
                 </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </CardContent>

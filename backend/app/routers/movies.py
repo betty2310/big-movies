@@ -20,28 +20,28 @@ async def get_movies(
 ):
     """List movies with pagination and filters"""
     offset = (page - 1) * limit
-    
+
     conditions = []
     params = []
     param_idx = 1
-    
+
     if year:
         conditions.append(f"m.year = ${param_idx}")
         params.append(year)
         param_idx += 1
-    
+
     if min_rating:
         conditions.append(f"f.imdb_rating >= ${param_idx}")
         params.append(min_rating)
         param_idx += 1
-    
+
     if search:
         conditions.append(f"m.title ILIKE ${param_idx}")
         params.append(f"%{search}%")
         param_idx += 1
-    
+
     where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
-    
+
     sort_columns = {
         "year": "m.year",
         "title": "m.title",
@@ -50,7 +50,7 @@ async def get_movies(
     }
     sort_col = sort_columns.get(sort_by, "m.year")
     sort_dir = "DESC" if sort_order.lower() == "desc" else "ASC"
-    
+
     query = f"""
         SELECT m.movie_id, m.title, m.year, m.runtime, m.poster_url,
                f.imdb_rating, f.imdb_votes, f.tmdb_rating
@@ -61,16 +61,16 @@ async def get_movies(
         LIMIT ${param_idx} OFFSET ${param_idx + 1}
     """
     params.extend([limit, offset])
-    
+
     rows = await db.fetch(query, *params)
-    
+
     count_query = f"""
         SELECT COUNT(*) FROM dim_movie m
         LEFT JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
         {where_clause}
     """
     total = await db.fetchval(count_query, *params[:-2]) if params[:-2] else await db.fetchval(count_query)
-    
+
     return {
         "data": [dict(r) for r in rows],
         "total": total,
@@ -98,7 +98,7 @@ async def get_movie_detail(
     )
     if not movie:
         return None
-    
+
     genres = await db.fetch(
         """
         SELECT g.genre_id, g.genre_name
@@ -108,7 +108,7 @@ async def get_movie_detail(
         """,
         movie_id,
     )
-    
+
     cast = await db.fetch(
         """
         SELECT p.person_id, p.name, bc.category, bc.ordering, bc.characters
@@ -120,7 +120,7 @@ async def get_movie_detail(
         """,
         movie_id,
     )
-    
+
     return {
         "movie": dict(movie),
         "genres": [dict(g) for g in genres],
