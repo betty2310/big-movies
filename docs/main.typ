@@ -2,7 +2,7 @@
 
 #show: slides.with(
   title: "Hệ thống Phân tích Dữ liệu lớn & Khám phá Tri thức Phim ảnh",
-  subtitle: "Big Data Integration",
+  subtitle: "Big Data Integration - GVHD: TS. Vũ Tuyết Trinh",
   authors: "Học viên: Dương Hữu Huynh & Đoàn Sỹ Nguyên",
   layout: "medium",
   ratio: 16/9,
@@ -123,24 +123,76 @@ Trong quá trình thu thập và phân tích, các vấn đề sau đã được
 == Kiến trúc High-Level
 
 #figure(
-    image("architec.png", width: 100%),
+    image("movie-architecture.png", width: 50%),
   caption: [Kiến trúc tổng quan hệ thống]
 )
 
+== Pha Thu thập Dữ liệu (Ingestion)
 
-== Giải pháp Tích hợp: Entity Resolution (1/2)
 
-Khó khăn lớn nhất là ánh xạ (Mapping) một bộ phim giữa các nguồn.
+*Mục tiêu:* Thu thập dữ liệu thô từ 4 nguồn và lưu vào S3 Raw Zone.
 
-*Chiến lược "Xương sống" (The Spine Strategy):*
-- Sử dụng file `links.csv` của MovieLens làm nguồn sự thật (Source of Truth).
-- Mapping trực tiếp: `MovieLens ID` $arrow.l.r$ `IMDb ID` $arrow.l.r$ `TMDB ID`.
 
-*Code Logic xử lý ID Normalization:*
 
-= 4. Xử lý Dữ liệu (ETL với Apache Spark)
+#table(
+  columns: (1fr, 1fr, 1fr, 1.5fr),
+  inset: 10pt,
+  align: horizon,
+  fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+  [*Nguồn*], [*Script*], [*Output*], [*Đích S3*],
+  [MovieLens], [`ingestion/movielens`], [CSV], [`raw/movielens/{date}/`],
+  [IMDb], [`ingestion/imdb`], [TSV], [`raw/imdb/{date}/`],
+  [Rotten Tomatoes], [`ingestion/rotten_tomatoes`], [NDJSON], [`raw/rotten_tomatoes/{date}/`],
+  [TMDB], [`ingestion/tmdb`], [NDJSON], [`raw/tmdb/{date}/`],
+)
 
-== Kiến trúc Medallion (Bronze → Silver → Gold)
+
+
+== Kỹ thuật xử lý lỗi & Khả năng phục hồi
+
+#table(
+  columns: (1.2fr, 2fr, 2fr),
+  inset: 10pt,
+  align: horizon,
+  fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+  [*Kỹ thuật*], [*Mô tả*], [*Áp dụng*],
+  [*Retry với Backoff*], [Thử lại với delay tăng dần: 2s $arrow$ 4s $arrow$ 8s], [Tất cả nguồn],
+  [*Checksum Detection*], [So sánh MD5 để phát hiện thay đổi], [MovieLens, IMDb],
+  [*SQLite State*], [Lưu trạng thái crawl để resume], [Rotten Tomatoes],
+  [*JSON State File*], [Lưu year/page đang xử lý], [TMDB],
+  [*Rotating Headers*], [Thay đổi User-Agent mỗi request], [Rotten Tomatoes],
+  [*Chunked Upload*], [Upload từng phần 1000 records], [RT, TMDB],
+)
+
+== Kết quả Thu thập Dữ liệu
+
+#table(
+  columns: (1fr, 1.5fr, 1fr, 1.5fr),
+  inset: 10pt,
+  align: horizon,
+  fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+  [*Nguồn*], [*Số lượng*], [*Dung lượng*], [*Files*],
+  
+  [MovieLens], [87k movies\ 32M ratings\ 2M tags], [~300MB], [4 CSV files\ (ratings, movies, tags, links)],
+  
+  [IMDb], [~10M titles\ ~12M persons\ Cast/crew relationships\ Global ratings], [~4GB], [7 TSV files\ (title.basics, title.ratings,\ name.basics, title.principals,\ title.crew, title.akas,\ title.episode)],
+  
+  [Rotten Tomatoes], [~200 movies\ Critics + Audience scores\ Box office data], [~20MB], [NDJSON chunks\ + metadata.json],
+  
+  [TMDB], [~600k movies\ Posters + metadata\ Years 1950-present], [~500MB], [NDJSON chunks\ + metadata.json],
+)<ingestion-results>
+
+#text(size: 9pt)[
+  *Ghi chú:* IMDb bao gồm thông tin về ~10M titles (movies, TV series, episodes) và ~12M persons (actors, directors, writers) với các mối quan hệ cast/crew được lưu trong title.principals và title.crew.
+]
+
+
+*Output location:* `s3://movies-datalake-2310/raw/{source}/{date}/`
+
+
+== Xử lý Dữ liệu (ETL với Apache Spark)
+
+=== Kiến trúc Bronze → Silver → Gold
 
 Sử dụng kiến trúc *Medallion Architecture* với 3 tầng xử lý trên AWS EMR:
 
@@ -163,7 +215,7 @@ Sử dụng kiến trúc *Medallion Architecture* với 3 tầng xử lý trên 
 - *S3* làm Data Lake lưu trữ Parquet
 - *Supabase PostgreSQL* làm Data Warehouse cuối
 
-== Bronze Layer: Raw → Parquet
+=== Bronze Layer: Raw → Parquet
 
 *Mục tiêu:* Chuyển đổi dữ liệu thô sang định dạng Parquet với schema được định nghĩa sẵn.
 
@@ -192,7 +244,7 @@ Sử dụng kiến trúc *Medallion Architecture* với 3 tầng xử lý trên 
   ]
 )
 
-#v(0.5em)
+#v(1.5em)
 
 #table(
   columns: (1.5fr, 1fr, 1fr, 2fr),
@@ -365,9 +417,14 @@ movie_id (hash) │ ml_id │ imdb_id    │ tmdb_id │ rt_slug
 
 #v(0.5em)
 
-*Kết quả:* Chuyển đổi thành công ~85% các giá trị box office raw thành số nguyên.
 
 == Gold Layer: Star Schema Design
+
+#figure(
+    image("schema.png", width: 100%),
+  caption: [Data warehouse schema]
+)
+
 
 *Mô hình Star Schema* cho Data Warehouse:
 
@@ -407,14 +464,8 @@ movie_id (hash) │ ml_id │ imdb_id    │ tmdb_id │ rt_slug
   [`dim_time`], [`time_id`, `year`, `quarter`, `month`], [Generated (1950-2030)],
 )
 
-#v(0.5em)
 
-*Data Fusion trong `dim_movie`:*
-```python
-# Ưu tiên nguồn theo thứ tự độ tin cậy
-title = coalesce(imdb_title, ml_title, tmdb_title, rt_title)
-year  = coalesce(imdb_year, ml_year, tmdb_year, rt_year)
-```
+
 
 == Gold Layer: Fact Table
 
@@ -436,39 +487,7 @@ year  = coalesce(imdb_year, ml_year, tmdb_year, rt_year)
   [`box_office_revenue`], [BIGINT], [RT (parsed to integer)],
 )
 
-== Gold Layer: Divisive Score Metric
 
-*Metric độc đáo:* Đo lường sự "gây tranh cãi" của phim.
-
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
-  [
-    #block(fill: luma(240), inset: 10pt, radius: 5pt, width: 100%)[
-      *Công thức:*
-      $ "divisive\_score" = |"tomatometer" - "audience"| $
-
-      *Ý nghĩa:*
-      - Score cao = Phim gây chia rẽ (critics vs audience)
-      - Score thấp = Đồng thuận cao
-    ]
-  ],
-  [
-    #block(fill: blue.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Ví dụ phim "Divisive":*
-      - Critics yêu, khán giả ghét
-      - Hoặc ngược lại
-
-      *Code:*
-      ```python
-      divisive = spark_abs(
-        col("tomatometer") -
-        col("audience")
-      )
-      ```
-    ]
-  ]
-)
 
 == ETL Pipeline: Job Dependencies
 
@@ -509,34 +528,6 @@ year  = coalesce(imdb_year, ml_year, tmdb_year, rt_year)
   ]
 ]
 
-== Load to PostgreSQL
-
-*Bước cuối: Load Gold Layer vào PostgreSQL via JDBC*
-
-```python
-TABLES = ["dim_time", "dim_genre", "dim_person", "dim_movie",
-          "fact_movie_metrics", "bridge_movie_cast", "bridge_movie_genres"]
-
-for table in TABLES:
-    df = spark.read.parquet(f"s3://bucket/gold/{table}")
-    df.write.jdbc(url=jdbc_url, table=table, mode="overwrite",
-                  properties={"batchsize": "10000"})
-```
-
-#v(0.5em)
-
-#table(
-  columns: (2fr, 1fr, 2fr),
-  inset: 8pt,
-  align: horizon,
-  fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
-  [*Table*], [*~Rows*], [*Primary Key*],
-  [`dim_movie`], [~87,000], [`movie_id` (BIGINT)],
-  [`dim_person`], [~500,000], [`person_id` (TEXT)],
-  [`fact_movie_metrics`], [~87,000], [`metric_id` (BIGINT)],
-  [`bridge_movie_cast`], [~2,000,000], [`(movie_id, person_id, ordering)`],
-)
-
 == Tổng kết ETL Processing
 
 #grid(
@@ -568,38 +559,16 @@ for table in TABLES:
 
 *Kết quả:* Pipeline ETL hoàn chỉnh từ 4 nguồn dữ liệu không đồng nhất → Star Schema phục vụ Analytics.
 
-= 5. Khám phá Tri thức & Xây dựng Dashboard
+= 4. Khám phá Tri thức, xây dựng Dashboard
 
-== Kiến trúc Backend API
 
-*REST API* phục vụ Dashboard analytics, xây dựng với FastAPI + PostgreSQL:
+== Xu hướng Sản lượng Phim theo Năm
 
-#table(
-  columns: (1.5fr, 2fr, 2fr),
-  inset: 8pt,
-  align: horizon,
-  fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
-  [*Module*], [*Endpoints*], [*Mục đích*],
-  [**Overview**], [`/movies-per-year`, `/top-popular`, `/language-distribution`], [Tổng quan thị trường],
-  [**Ratings**], [`/distribution`, `/platform-comparison`, `/cult-classics`], [Phân tích đánh giá],
-  [**Genres**], [`/share-by-decade`, `/average-rating`, `/co-occurrence`], [Xu hướng thể loại],
-  [**People**], [`/top-prolific`, `/top-rated`, `/actor-network`], [Phân tích nhân vật],
-  [**Temporal**], [`/runtime-trend`, `/quality-by-month`, `/mpaa-distribution`], [Phân tích thời gian],
-)
-
-#v(0.5em)
-
-*Tech Stack:* FastAPI + asyncpg + Supabase PostgreSQL
-
-== Insight 1: Xu hướng Sản lượng Phim theo Năm
-
-*API:* `GET /api/overview/movies-per-year`
 
 ```sql
 SELECT year, COUNT(*) as count FROM dim_movie
 WHERE year BETWEEN $1 AND $2 GROUP BY year ORDER BY year
 ```
-
 #grid(
   columns: (1fr, 1fr),
   gutter: 1em,
@@ -612,240 +581,22 @@ WHERE year BETWEEN $1 AND $2 GROUP BY year ORDER BY year
       - Phục hồi từ 2022
     ]
   ],
-  [
-    #block(fill: blue.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Biểu đồ:* Line Chart \
-      *X-axis:* Year (1950-2025) \
-      *Y-axis:* Movie count \
-      *Insight:* Xu hướng tăng trưởng ngành công nghiệp điện ảnh
-    ]
-  ]
+  // [
+  //   #block(fill: blue.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
+  //     *Biểu đồ:* Line Chart \
+  //     *X-axis:* Year (1950-2025) \
+  //     *Y-axis:* Movie count \
+  //     *Insight:* Xu hướng tăng trưởng ngành công nghiệp điện ảnh
+  //   ]
+  // ]
 )
 
-== Insight 2: So sánh Rating giữa các Platform
+#image("CleanShot 2026-02-01 at 11.38.41@2x.png")
 
-*API:* `GET /api/ratings/platform-comparison`
 
-```sql
-SELECT m.year, AVG(f.imdb_rating) as imdb_avg,
-       AVG(f.tmdb_rating) as tmdb_avg, AVG(f.ml_avg_rating) as ml_avg
-FROM dim_movie m JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
-GROUP BY m.year ORDER BY m.year
-```
 
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
-  [
-    #block(fill: luma(240), inset: 10pt, radius: 5pt, width: 100%)[
-      *Phát hiện:*
-      - IMDb có xu hướng cho điểm cao hơn TMDB
-      - MovieLens (thang 5) x2 ≈ tương đương IMDb
-      - Rating trung bình giảm dần theo thời gian
-      - "Rating inflation" ở các phim cũ
-    ]
-  ],
-  [
-    #block(fill: orange.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Biểu đồ:* Multi-line Chart \
-      *3 đường:* IMDb, TMDB, MovieLens \
-      *Insight:* Sự khác biệt đánh giá giữa các cộng đồng
-    ]
-  ]
-)
+== Xu hướng Runtime theo Thời gian
 
-== Insight 3: Phân bố Rating (Histogram)
-
-*API:* `GET /api/ratings/distribution?source=imdb`
-
-```sql
-SELECT FLOOR(imdb_rating)::int as bin, COUNT(*) as count
-FROM fact_movie_metrics WHERE imdb_rating IS NOT NULL
-GROUP BY bin ORDER BY bin
-```
-
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
-  [
-    #block(fill: luma(240), inset: 10pt, radius: 5pt, width: 100%)[
-      *Phát hiện:*
-      - Phân bố lệch phải (right-skewed)
-      - Đỉnh tập trung ở 6-7 điểm
-      - Rất ít phim dưới 4 điểm (survivorship bias)
-      - Phim 8+ điểm chiếm ~15%
-    ]
-  ],
-  [
-    #block(fill: green.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Biểu đồ:* Histogram/Bar Chart \
-      *X-axis:* Rating bins (0-10) \
-      *Y-axis:* Movie count \
-      *Insight:* Hiểu phân bố chất lượng phim
-    ]
-  ]
-)
-
-== Insight 4: Cult Classics - Viên ngọc Ẩn
-
-*API:* `GET /api/ratings/cult-classics?min_rating=8.0&max_votes=10000`
-
-```sql
-SELECT m.title, m.year, f.imdb_rating, f.imdb_votes
-FROM dim_movie m JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
-WHERE f.imdb_rating >= $1 AND f.imdb_votes <= $2 AND f.imdb_votes > 0
-ORDER BY f.imdb_rating DESC, f.imdb_votes ASC
-```
-
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
-  [
-    #block(fill: red.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Định nghĩa "Cult Classic":*
-      - Rating cao (≥ 8.0)
-      - Số vote thấp (≤ 10,000)
-      - Phim chất lượng nhưng ít người biết
-    ]
-  ],
-  [
-    #block(fill: blue.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Ứng dụng:*
-      - Recommendation System
-      - Khám phá phim mới
-      - Hidden gems discovery
-    ]
-  ]
-)
-
-== Insight 5: Thị phần Thể loại theo Thập kỷ
-
-*API:* `GET /api/genres/share-by-decade`
-
-```sql
-SELECT (m.year / 10) * 10 as decade, g.genre_name, COUNT(*) as count
-FROM dim_movie m
-JOIN bridge_movie_genres bg ON m.movie_id = bg.movie_id
-JOIN dim_genre g ON bg.genre_id = g.genre_id
-GROUP BY decade, g.genre_name ORDER BY decade, count DESC
-```
-
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
-  [
-    #block(fill: luma(240), inset: 10pt, radius: 5pt, width: 100%)[
-      *Phát hiện:*
-      - Drama luôn chiếm ưu thế qua các thập kỷ
-      - Action tăng mạnh từ 1980s
-      - Horror boom trong 2010s
-      - Documentary tăng trưởng gần đây
-    ]
-  ],
-  [
-    #block(fill: orange.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Biểu đồ:* Stacked Area Chart \
-      *X-axis:* Decades (1920-2020) \
-      *Y-axis:* Movie count (stacked) \
-      *Insight:* Sự thay đổi thị hiếu khán giả
-    ]
-  ]
-)
-
-== Insight 6: Ma trận Kết hợp Thể loại
-
-*API:* `GET /api/genres/co-occurrence`
-
-```sql
-SELECT g1.genre_name as genre1, g2.genre_name as genre2, COUNT(*) as count
-FROM bridge_movie_genres bg1
-JOIN bridge_movie_genres bg2 ON bg1.movie_id = bg2.movie_id
-  AND bg1.genre_id < bg2.genre_id
-JOIN dim_genre g1 ON bg1.genre_id = g1.genre_id
-JOIN dim_genre g2 ON bg2.genre_id = g2.genre_id
-GROUP BY g1.genre_name, g2.genre_name HAVING COUNT(*) > 50
-```
-
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
-  [
-    #block(fill: luma(240), inset: 10pt, radius: 5pt, width: 100%)[
-      *Phát hiện:*
-      - Drama + Romance: Kết hợp phổ biến nhất
-      - Action + Thriller: Cặp đôi kinh điển
-      - Comedy + Romance: Rom-com formula
-      - Sci-Fi + Action: Blockbuster pattern
-    ]
-  ],
-  [
-    #block(fill: green.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Biểu đồ:* Heatmap/Matrix \
-      *Rows/Cols:* Genre names \
-      *Value:* Co-occurrence count \
-      *Insight:* Genre pairing patterns
-    ]
-  ]
-)
-
-== Insight 7: Top Diễn viên/Đạo diễn
-
-*API:* `GET /api/people/top-prolific?category=actor`
-
-```sql
-SELECT p.name, COUNT(DISTINCT bc.movie_id) as movie_count
-FROM dim_person p
-JOIN bridge_movie_cast bc ON p.person_id = bc.person_id
-WHERE bc.category = $1
-GROUP BY p.person_id, p.name ORDER BY movie_count DESC
-```
-
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
-  [
-    #block(fill: luma(240), inset: 10pt, radius: 5pt, width: 100%)[
-      *Top Prolific (Số lượng):*
-      - Diễn viên đóng nhiều phim nhất
-      - Đạo diễn làm việc nhiều nhất
-      - Career longevity analysis
-    ]
-  ],
-  [
-    #block(fill: blue.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Top Rated (Chất lượng):*
-      - Diễn viên có rating TB cao nhất
-      - Filter: tối thiểu 5 phim
-      - Quality vs Quantity analysis
-    ]
-  ]
-)
-
-== Insight 8: Mạng lưới Hợp tác Diễn viên
-
-*API:* `GET /api/people/actor-network?min_collaborations=3`
-
-```sql
-SELECT p1.name as actor1, p2.name as actor2, COUNT(*) as collaborations
-FROM bridge_movie_cast bc1
-JOIN bridge_movie_cast bc2 ON bc1.movie_id = bc2.movie_id
-  AND bc1.person_id < bc2.person_id
-JOIN dim_person p1 ON bc1.person_id = p1.person_id
-JOIN dim_person p2 ON bc2.person_id = p2.person_id
-WHERE bc1.category = 'actor' AND bc2.category = 'actor'
-GROUP BY p1.name, p2.name HAVING COUNT(*) >= $1
-```
-
-#block(fill: luma(240), inset: 10pt, radius: 5pt, width: 100%)[
-  *Biểu đồ:* Network Graph (Force-directed) \
-  *Nodes:* Actors \
-  *Edges:* Collaboration count \
-  *Insight:* Khám phá các "cặp đôi vàng" và cliques trong Hollywood
-]
-
-== Insight 9: Xu hướng Runtime theo Thời gian
-
-*API:* `GET /api/temporal/runtime-trend`
 
 ```sql
 SELECT year, AVG(runtime) as avg_runtime, COUNT(*) as movie_count
@@ -874,99 +625,13 @@ GROUP BY year ORDER BY year
     ]
   ]
 )
+#image("CleanShot 2026-02-01 at 11.42.05@2x.png")
 
-== Insight 10: Phân tích Mùa Oscar
-
-*API:* `GET /api/temporal/quality-by-month`
-
-```sql
-SELECT t.month, AVG(f.imdb_rating) as avg_rating, COUNT(*) as movie_count
-FROM fact_movie_metrics f
-JOIN dim_time t ON f.time_id = t.time_id
-WHERE f.imdb_rating IS NOT NULL GROUP BY t.month ORDER BY t.month
-```
-
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
-  [
-    #block(fill: luma(240), inset: 10pt, radius: 5pt, width: 100%)[
-      *Phát hiện:*
-      - Tháng 11-12: Rating cao nhất (Oscar bait)
-      - Tháng 1-2: "Dump months" rating thấp
-      - Mùa hè: Blockbuster season
-      - Pattern rõ ràng theo mùa
-    ]
-  ],
-  [
-    #block(fill: green.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Biểu đồ:* Bar Chart / Polar Chart \
-      *X-axis:* Month (1-12) \
-      *Y-axis:* Average rating \
-      *Insight:* Chiến lược phát hành phim
-    ]
-  ]
-)
-
-== Insight 11: Phân bố MPAA Rating
-
-*API:* `GET /api/temporal/mpaa-distribution`
-
-```sql
-SELECT mpaa_rating, COUNT(*) as count, AVG(f.imdb_rating) as avg_rating
-FROM dim_movie m LEFT JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
-WHERE mpaa_rating IS NOT NULL GROUP BY mpaa_rating ORDER BY count DESC
-```
-
-#table(
-  columns: (1fr, 1.5fr, 1.5fr, 2fr),
-  inset: 8pt,
-  align: horizon,
-  fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
-  [*MPAA*], [*Count*], [*Avg Rating*], [*Insight*],
-  [R], [~25,000], [6.5], [Chiếm ưu thế, mature content],
-  [PG-13], [~18,000], [6.2], [Mainstream blockbusters],
-  [PG], [~8,000], [6.0], [Family-friendly],
-  [G], [~2,000], [6.8], [Ít phim, thường animation],
-  [NC-17], [~500], [5.5], [Rất ít, controversial],
-)
-
-== Insight 12: Runtime vs Rating Correlation
-
-*API:* `GET /api/ratings/runtime-vs-rating?sample_size=1000`
-
-```sql
-SELECT m.runtime, f.imdb_rating as rating
-FROM dim_movie m JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
-WHERE m.runtime BETWEEN 30 AND 300 AND f.imdb_rating IS NOT NULL
-ORDER BY RANDOM() LIMIT $1
-```
-
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
-  [
-    #block(fill: luma(240), inset: 10pt, radius: 5pt, width: 100%)[
-      *Phát hiện:*
-      - Tương quan dương yếu
-      - Phim dài hơn *có xu hướng* rating cao hơn
-      - Sweet spot: 100-150 phút
-      - Outliers ở cả hai đầu
-    ]
-  ],
-  [
-    #block(fill: blue.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Biểu đồ:* Scatter Plot \
-      *X-axis:* Runtime (minutes) \
-      *Y-axis:* IMDb Rating \
-      *Insight:* Phim dài = phim hay?
-    ]
-  ]
-)
+Xem đầy đủ các xu hướng khác tại: https://big-movies.vercel.app/
 
 == Dashboard Demo
 
-*Giao diện Dashboard* được xây dựng với Next.js + Recharts:
+*Giao diện Dashboard* thể hiện tất cả các insight
 
 #grid(
   columns: (1fr, 1fr),
@@ -1020,37 +685,211 @@ ORDER BY RANDOM() LIMIT $1
   - Runtime trend by year (*Line Chart*)
 ]
 
-== Tổng kết Tri thức Khám phá
+
+
+== Cảm ơn thầy cô và các bạn đã lắng nghe
+
+= Apendix
+==
+
+Link website: https://big-movies.vercel.app/
+
+Link source code: https://github.com/betty2310/big-movies/
+
+
+
+
+== Chi tiết dữ liệu ingestion
+=== Movielens
+- *URL*: `https://files.grouplens.org/datasets/movielens/ml-32m.zip`
+- *Format*: ZIP archive containing CSV files
+- *Collection Method*: Periodic download with checksum comparison
+
+*Files Collected*
+
+#table(
+  columns: (1.5fr, 3fr),
+  inset: 8pt,
+  align: horizon,
+  fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+  [*File*], [*Description*],
+  [`ratings.csv`], [User ratings (32M+ entries)],
+  [`movies.csv`], [Movie metadata (87k movies)],
+  [`tags.csv`], [User-generated tags (2M+ tags)],
+  [`links.csv`], [External ID mappings (IMDb, TMDB)],
+)
+
+=== Schemas (MovieLens)
 
 #grid(
   columns: (1fr, 1fr),
   gutter: 1em,
   [
-    #block(fill: green.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Giá trị từ Data Integration:*
-      - ✓ So sánh rating đa nguồn
-      - ✓ Phát hiện cult classics
-      - ✓ Phân tích xu hướng thể loại
-      - ✓ Mạng lưới hợp tác nghệ sĩ
-      - ✓ Phân tích mùa phát hành
-    ]
+    *ratings.csv*
+    #table(
+      columns: (1fr, 1fr, 2fr),
+      inset: 6pt,
+      fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+      [*Field*], [*Type*], [*Description*],
+      [`userId`], [Integer], [Unique user identifier],
+      [`movieId`], [Integer], [MovieLens movie ID],
+      [`rating`], [Float], [0.5-5.0 scale],
+      [`timestamp`], [Integer], [Unix timestamp],
+    )
   ],
   [
-    #block(fill: blue.lighten(90%), inset: 10pt, radius: 5pt, width: 100%)[
-      *Insights không thể có từ 1 nguồn:*
-      - Divisive Score (RT only)
-      - Rating correlation across platforms
-      - Box office vs Critic score
-      - Complete cast/crew network
-      - Multi-dimensional popularity
-    ]
+    *movies.csv*
+    #table(
+      columns: (1fr, 1fr, 2fr),
+      inset: 6pt,
+      fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+      [*Field*], [*Type*], [*Description*],
+      [`movieId`], [Integer], [Primary key],
+      [`title`], [String], [Title with year],
+      [`genres`], [String], [Pipe-separated],
+    )
   ]
 )
 
-#v(0.5em)
+#v(1em)
 
-*Kết luận:* Việc tích hợp 4 nguồn dữ liệu cho phép khám phá tri thức mà không thể có được từ bất kỳ nguồn đơn lẻ nào.
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    *tags.csv*
+    #table(
+      columns: (1fr, 1fr, 2fr),
+      inset: 6pt,
+      fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+      [*Field*], [*Type*], [*Description*],
+      [`userId`], [Integer], [Tagging user],
+      [`movieId`], [Integer], [Movie ID],
+      [`tag`], [String], [Free-form text],
+    )
+  ],
+  [
+    *links.csv*
+    #table(
+      columns: (1fr, 1fr, 2fr),
+      inset: 6pt,
+      fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+      [*Field*], [*Type*], [*Description*],
+      [`movieId`], [Integer], [MovieLens ID],
+      [`imdbId`], [String], [IMDb ID],
+      [`tmdbId`], [Integer], [TMDB ID],
+    )
+  ]
+)
 
-= Appendix
 
-== Chi tiết dữ liệu
+=== IMDb
+
+Base URL: ⁠https://datasets.imdbws.com
+
+Format: Gzipped TSV files (tab-separated)
+
+Collection Method: Daily download of public datasets
+Files Collected
+#table(
+columns: (1.5fr, 3fr),
+inset: 8pt,
+align: horizon,
+fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+[File], [Description],
+[⁠name.basics.tsv], [Person information (actors, directors, etc.)],
+[⁠title.akas.tsv], [Alternative titles by region],
+[⁠title.basics.tsv], [Core movie metadata],
+[⁠title.crew.tsv], [Director and writer associations],
+[⁠title.episode.tsv], [TV episode information],
+[⁠title.principals.tsv], [Principal cast/crew for titles],
+[⁠title.ratings.tsv], [IMDb ratings and vote counts],
+)
+=== Schemas (IMDb)
+#grid(
+columns: (1fr, 1fr),
+gutter: 1em,
+[
+title.basics.tsv
+#table(
+columns: (1fr, 2fr),
+inset: 6pt,
+[Field], [Description],
+[⁠tconst], [Unique title ID (tt...)],
+[⁠titleType], [movie, short, tvSeries],
+[⁠primaryTitle], [Display title],
+[⁠originalTitle], [Original language title],
+[⁠startYear], [Release year],
+[⁠genres], [Comma-separated genres],
+)
+],
+[
+title.ratings.tsv & name.basics.tsv
+#table(
+columns: (1fr, 2fr),
+inset: 6pt,
+[Field], [Description],
+[⁠averageRating], [Weighted average (0-10)],
+[⁠numVotes], [Total number of votes],
+[⁠nconst], [Person ID (nm...)],
+[⁠primaryName], [Name as credited],
+[⁠knownForTitles], [Comma-separated title IDs],
+)
+]
+)
+
+=== Rotten Tomatoes
+=== Source & Strategy
+	Base URL: ⁠https://www.rottentomatoes.com 
+ 
+ Format: HTML pages (unstructured)
+ 
+ Collection Method: Web scraping with rate limiting
+
+=== Schema: MovieRecord (Output)
+#table(
+columns: (1.2fr, 1fr, 2.5fr),
+inset: 8pt,
+align: horizon,
+fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+[Field], [Type], [Description],
+[⁠rt_id], [String], [Rotten Tomatoes identifier (slug)],
+[⁠slug], [String], [URL slug (e.g., "the_godfather")],
+[⁠title], [String], [Movie title],
+[⁠tomatometer_score], [Int | null], [Critics score (0-100%)],
+[⁠audience_score], [Int | null], [Audience score (0-100%)],
+[⁠box_office], [String | null], [Revenue (e.g., "\$100M")],
+[⁠release_date], [String | null], [Theatrical release date],
+[⁠director], [String | null], [Director name(s)],
+[⁠genre], [String | null], [Primary genre(s)],
+[⁠scraped_at], [String], [ISO timestamp],
+)
+
+=== TMDB (The Movie Database)
+=== Source & API
+Base URL: ⁠https://api.themoviedb.org/3
+
+Format: JSON API responses
+
+Method: REST API with bearer token authentication
+
+````
+ GET /discover/movie?primary_release_year={year}&sort_by=popularity.desc&page={page}&include_adult=false
+````
+  === Schema: TMDB Movie Response
+#table(
+columns: (1.2fr, 1fr, 2.5fr),
+inset: 8pt,
+align: horizon,
+fill: (_, row) => if calc.odd(row) { luma(240) } else { white },
+[Field], [Type], [Description],
+[⁠id], [Integer], [TMDB movie ID],
+[⁠title], [String], [Movie title],
+[⁠overview], [String], [Plot summary],
+[⁠poster_path], [String], [Poster image path],
+[⁠release_date], [String], [Release date (YYYY-MM-DD)],
+[⁠popularity], [Float], [Popularity score],
+[⁠vote_average], [Float], [Average user rating (0-10)],
+[⁠genre_ids], [Array], [Array of genre ID integers],
+[⁠original_language], [String], [ISO 639-1 language code],
+)
