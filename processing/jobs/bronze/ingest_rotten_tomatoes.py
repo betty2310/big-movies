@@ -11,11 +11,10 @@ from typing import Optional
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_date
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger("Bronze-RottenTomatoes")
 
@@ -23,27 +22,28 @@ S3_BUCKET = "movies-datalake-2310"
 RAW_RT = f"s3://{S3_BUCKET}/raw/rotten_tomatoes"
 BRONZE_RT = f"s3://{S3_BUCKET}/bronze/rotten_tomatoes"
 
-RT_SCHEMA = StructType([
-    StructField("rt_id", StringType(), False),
-    StructField("slug", StringType(), True),
-    StructField("title", StringType(), True),
-    StructField("tomatometer_score", IntegerType(), True),
-    StructField("audience_score", IntegerType(), True),
-    StructField("mpaa_rating", StringType(), True),
-    StructField("box_office", StringType(), True),
-    StructField("release_date", StringType(), True),
-    StructField("release_year", IntegerType(), True),
-    StructField("director", StringType(), True),
-    StructField("genre", StringType(), True),
-    StructField("scraped_at", StringType(), True),
-])
+RT_SCHEMA = StructType(
+    [
+        StructField("rt_id", StringType(), False),
+        StructField("slug", StringType(), True),
+        StructField("title", StringType(), True),
+        StructField("tomatometer_score", IntegerType(), True),
+        StructField("audience_score", IntegerType(), True),
+        StructField("mpaa_rating", StringType(), True),
+        StructField("box_office", StringType(), True),
+        StructField("release_date", StringType(), True),
+        StructField("release_year", IntegerType(), True),
+        StructField("director", StringType(), True),
+        StructField("genre", StringType(), True),
+        StructField("scraped_at", StringType(), True),
+    ]
+)
 
 
 def get_spark_session(app_name: str) -> SparkSession:
     logger.info(f"Creating SparkSession: {app_name}")
     return (
-        SparkSession.builder
-        .appName(app_name)
+        SparkSession.builder.appName(app_name)
         .config("spark.sql.adaptive.enabled", "true")
         .config("spark.sql.parquet.compression.codec", "snappy")
         .getOrCreate()
@@ -108,7 +108,7 @@ def ingest_rotten_tomatoes(input_date: Optional[str] = None):
         logger.info(f"  Writing to: {output_path}")
 
         df.write.mode("overwrite").parquet(output_path)
-        logger.info(f"  ✓ movies complete")
+        logger.info("  ✓ movies complete")
 
     except Exception as e:
         logger.error(f"  ✗ Failed to process Rotten Tomatoes: {e}")
@@ -119,8 +119,12 @@ def ingest_rotten_tomatoes(input_date: Optional[str] = None):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Ingest Rotten Tomatoes NDJSON to Bronze Parquet")
-    parser.add_argument("--input-date", type=str, default=None, help="Date partition (YYYY-MM-DD)")
+    parser = argparse.ArgumentParser(
+        description="Ingest Rotten Tomatoes NDJSON to Bronze Parquet"
+    )
+    parser.add_argument(
+        "--input-date", type=str, default=None, help="Date partition (YYYY-MM-DD)"
+    )
     args = parser.parse_args()
 
     logger.info("=" * 60)

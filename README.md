@@ -14,7 +14,7 @@ Big Movies is a full data engineering + analytics project that integrates 4 movi
 | **MovieLens 32M**   | CSV                   | ~32 million ratings, 2 million tags, 87,585 movies         |
 | **IMDb**            | TSV                   | Comprehensive metadata, director/cast info, global ratings |
 | **Rotten Tomatoes** | Web Scraping → NDJSON | Tomatometer, audience scores, MPAA ratings, box office     |
-| **TMDB**            | REST API → NDJSON     | Movie posters, plot summaries, popularity metrics          |
+| **TMDB**            | REST API → NDJSON     | Movie posters, plot summaries, popularity, budget, revenue |
 
 ## Architecture
 
@@ -141,7 +141,7 @@ s3://movies-datalake-2310/
 
 ### Fact Table
 
-- `fact_movie_metrics` — All ratings and metrics aggregated (ML, IMDb, TMDB, RT, box office)
+- `fact_movie_metrics` — All ratings and metrics aggregated (ML, IMDb, TMDB, RT, budget, revenue)
 
 ### Bridge Tables
 

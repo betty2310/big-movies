@@ -12,12 +12,17 @@ from typing import Optional
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_date
 from pyspark.sql.types import (
-    StructType, StructField, StringType, IntegerType, DoubleType, BooleanType, ArrayType
+    ArrayType,
+    BooleanType,
+    DoubleType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
 )
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger("Bronze-TMDB")
 
@@ -25,29 +30,32 @@ S3_BUCKET = "movies-datalake-2310"
 RAW_TMDB = f"s3://{S3_BUCKET}/raw/tmdb"
 BRONZE_TMDB = f"s3://{S3_BUCKET}/bronze/tmdb"
 
-TMDB_SCHEMA = StructType([
-    StructField("id", IntegerType(), False),
-    StructField("title", StringType(), True),
-    StructField("original_title", StringType(), True),
-    StructField("overview", StringType(), True),
-    StructField("poster_path", StringType(), True),
-    StructField("backdrop_path", StringType(), True),
-    StructField("release_date", StringType(), True),
-    StructField("popularity", DoubleType(), True),
-    StructField("vote_average", DoubleType(), True),
-    StructField("vote_count", IntegerType(), True),
-    StructField("genre_ids", ArrayType(IntegerType()), True),
-    StructField("original_language", StringType(), True),
-    StructField("adult", BooleanType(), True),
-    StructField("video", BooleanType(), True),
-])
+TMDB_SCHEMA = StructType(
+    [
+        StructField("id", IntegerType(), False),
+        StructField("title", StringType(), True),
+        StructField("original_title", StringType(), True),
+        StructField("overview", StringType(), True),
+        StructField("poster_path", StringType(), True),
+        StructField("backdrop_path", StringType(), True),
+        StructField("release_date", StringType(), True),
+        StructField("popularity", DoubleType(), True),
+        StructField("vote_average", DoubleType(), True),
+        StructField("vote_count", IntegerType(), True),
+        StructField("genre_ids", ArrayType(IntegerType()), True),
+        StructField("original_language", StringType(), True),
+        StructField("adult", BooleanType(), True),
+        StructField("video", BooleanType(), True),
+        StructField("budget", IntegerType(), True),
+        StructField("revenue", IntegerType(), True),
+    ]
+)
 
 
 def get_spark_session(app_name: str) -> SparkSession:
     logger.info(f"Creating SparkSession: {app_name}")
     return (
-        SparkSession.builder
-        .appName(app_name)
+        SparkSession.builder.appName(app_name)
         .config("spark.sql.adaptive.enabled", "true")
         .config("spark.sql.parquet.compression.codec", "snappy")
         .getOrCreate()
@@ -112,7 +120,7 @@ def ingest_tmdb(input_date: Optional[str] = None):
         logger.info(f"  Writing to: {output_path}")
 
         df.write.mode("overwrite").parquet(output_path)
-        logger.info(f"  ✓ movies complete")
+        logger.info("  ✓ movies complete")
 
     except Exception as e:
         logger.error(f"  ✗ Failed to process TMDB: {e}")
@@ -124,7 +132,9 @@ def ingest_tmdb(input_date: Optional[str] = None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest TMDB NDJSON to Bronze Parquet")
-    parser.add_argument("--input-date", type=str, default=None, help="Date partition (YYYY-MM-DD)")
+    parser.add_argument(
+        "--input-date", type=str, default=None, help="Date partition (YYYY-MM-DD)"
+    )
     args = parser.parse_args()
 
     logger.info("=" * 60)

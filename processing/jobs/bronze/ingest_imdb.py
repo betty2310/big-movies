@@ -13,11 +13,10 @@ from typing import Optional
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_date
-from pyspark.sql.types import StructType, StructField, StringType
+from pyspark.sql.types import StringType, StructField, StructType
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger("Bronze-IMDb")
 
@@ -26,67 +25,80 @@ RAW_IMDB = f"s3://{S3_BUCKET}/raw/imdb"
 BRONZE_IMDB = f"s3://{S3_BUCKET}/bronze/imdb"
 
 SCHEMAS = {
-    "title.basics": StructType([
-        StructField("tconst", StringType(), False),
-        StructField("titleType", StringType(), True),
-        StructField("primaryTitle", StringType(), True),
-        StructField("originalTitle", StringType(), True),
-        StructField("isAdult", StringType(), True),
-        StructField("startYear", StringType(), True),
-        StructField("endYear", StringType(), True),
-        StructField("runtimeMinutes", StringType(), True),
-        StructField("genres", StringType(), True),
-    ]),
-    "title.ratings": StructType([
-        StructField("tconst", StringType(), False),
-        StructField("averageRating", StringType(), True),
-        StructField("numVotes", StringType(), True),
-    ]),
-    "name.basics": StructType([
-        StructField("nconst", StringType(), False),
-        StructField("primaryName", StringType(), True),
-        StructField("birthYear", StringType(), True),
-        StructField("deathYear", StringType(), True),
-        StructField("primaryProfession", StringType(), True),
-        StructField("knownForTitles", StringType(), True),
-    ]),
-    "title.principals": StructType([
-        StructField("tconst", StringType(), False),
-        StructField("ordering", StringType(), True),
-        StructField("nconst", StringType(), True),
-        StructField("category", StringType(), True),
-        StructField("job", StringType(), True),
-        StructField("characters", StringType(), True),
-    ]),
-    "title.crew": StructType([
-        StructField("tconst", StringType(), False),
-        StructField("directors", StringType(), True),
-        StructField("writers", StringType(), True),
-    ]),
-    "title.akas": StructType([
-        StructField("titleId", StringType(), False),
-        StructField("ordering", StringType(), True),
-        StructField("title", StringType(), True),
-        StructField("region", StringType(), True),
-        StructField("language", StringType(), True),
-        StructField("types", StringType(), True),
-        StructField("attributes", StringType(), True),
-        StructField("isOriginalTitle", StringType(), True),
-    ]),
-    "title.episode": StructType([
-        StructField("tconst", StringType(), False),
-        StructField("parentTconst", StringType(), True),
-        StructField("seasonNumber", StringType(), True),
-        StructField("episodeNumber", StringType(), True),
-    ]),
+    "title.basics": StructType(
+        [
+            StructField("tconst", StringType(), False),
+            StructField("titleType", StringType(), True),
+            StructField("primaryTitle", StringType(), True),
+            StructField("originalTitle", StringType(), True),
+            StructField("isAdult", StringType(), True),
+            StructField("startYear", StringType(), True),
+            StructField("endYear", StringType(), True),
+            StructField("runtimeMinutes", StringType(), True),
+            StructField("genres", StringType(), True),
+        ]
+    ),
+    "title.ratings": StructType(
+        [
+            StructField("tconst", StringType(), False),
+            StructField("averageRating", StringType(), True),
+            StructField("numVotes", StringType(), True),
+        ]
+    ),
+    "name.basics": StructType(
+        [
+            StructField("nconst", StringType(), False),
+            StructField("primaryName", StringType(), True),
+            StructField("birthYear", StringType(), True),
+            StructField("deathYear", StringType(), True),
+            StructField("primaryProfession", StringType(), True),
+            StructField("knownForTitles", StringType(), True),
+        ]
+    ),
+    "title.principals": StructType(
+        [
+            StructField("tconst", StringType(), False),
+            StructField("ordering", StringType(), True),
+            StructField("nconst", StringType(), True),
+            StructField("category", StringType(), True),
+            StructField("job", StringType(), True),
+            StructField("characters", StringType(), True),
+        ]
+    ),
+    "title.crew": StructType(
+        [
+            StructField("tconst", StringType(), False),
+            StructField("directors", StringType(), True),
+            StructField("writers", StringType(), True),
+        ]
+    ),
+    "title.akas": StructType(
+        [
+            StructField("titleId", StringType(), False),
+            StructField("ordering", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("region", StringType(), True),
+            StructField("language", StringType(), True),
+            StructField("types", StringType(), True),
+            StructField("attributes", StringType(), True),
+            StructField("isOriginalTitle", StringType(), True),
+        ]
+    ),
+    "title.episode": StructType(
+        [
+            StructField("tconst", StringType(), False),
+            StructField("parentTconst", StringType(), True),
+            StructField("seasonNumber", StringType(), True),
+            StructField("episodeNumber", StringType(), True),
+        ]
+    ),
 }
 
 
 def get_spark_session(app_name: str) -> SparkSession:
     logger.info(f"Creating SparkSession: {app_name}")
     return (
-        SparkSession.builder
-        .appName(app_name)
+        SparkSession.builder.appName(app_name)
         .config("spark.sql.adaptive.enabled", "true")
         .config("spark.sql.parquet.compression.codec", "snappy")
         .getOrCreate()
@@ -168,7 +180,9 @@ def ingest_imdb(input_date: Optional[str] = None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest IMDb TSV to Bronze Parquet")
-    parser.add_argument("--input-date", type=str, default=None, help="Date partition (YYYY-MM-DD)")
+    parser.add_argument(
+        "--input-date", type=str, default=None, help="Date partition (YYYY-MM-DD)"
+    )
     args = parser.parse_args()
 
     logger.info("=" * 60)

@@ -2,7 +2,8 @@
 Gold Layer: Build Fact Movie Metrics
 
 Aggregates all ratings and metrics from multiple sources into unified fact table.
-Includes: MovieLens avg/count, IMDb rating/votes, RT tomatometer/audience/divisive, box office
+Includes: MovieLens avg/count, IMDb rating/votes, RT tomatometer/audience/divisive,
+          TMDB budget/revenue
 
 Input:
 - s3://movies-datalake-2310/silver/entity_spine/
@@ -85,7 +86,6 @@ def build_fact_metrics(spark: SparkSession):
         col("tomatometer_score"),
         col("audience_score"),
         col("divisive_score"),
-        col("box_office_revenue"),
     )
     rt_count = rt_df.count()
     logger.info(f"    Rotten Tomatoes records: {rt_count}")
@@ -97,6 +97,8 @@ def build_fact_metrics(spark: SparkSession):
         col("tmdb_rating"),
         col("tmdb_votes"),
         col("popularity").alias("tmdb_popularity"),
+        col("budget"),
+        col("revenue"),
     )
     tmdb_count = tmdb_df.count()
     logger.info(f"    TMDB records: {tmdb_count}")
@@ -124,7 +126,8 @@ def build_fact_metrics(spark: SparkSession):
         col("tomatometer_score"),
         col("audience_score"),
         col("divisive_score"),
-        col("box_office_revenue"),
+        col("budget"),
+        col("revenue"),
     ).withColumn("created_date", current_date())
 
     fact_metrics = fact_metrics.dropDuplicates(["movie_id"])
@@ -137,7 +140,8 @@ def build_fact_metrics(spark: SparkSession):
     with_tomatometer = fact_metrics.filter(col("tomatometer_score").isNotNull()).count()
     with_audience = fact_metrics.filter(col("audience_score").isNotNull()).count()
     with_divisive = fact_metrics.filter(col("divisive_score").isNotNull()).count()
-    with_box_office = fact_metrics.filter(col("box_office_revenue").isNotNull()).count()
+    with_budget = fact_metrics.filter(col("budget").isNotNull()).count()
+    with_revenue = fact_metrics.filter(col("revenue").isNotNull()).count()
 
     logger.info("=" * 60)
     logger.info("Fact Movie Metrics Statistics")
@@ -149,7 +153,8 @@ def build_fact_metrics(spark: SparkSession):
     logger.info(f"  With Tomatometer: {with_tomatometer} ({100 * with_tomatometer / final_count:.1f}%)")
     logger.info(f"  With Audience Score: {with_audience} ({100 * with_audience / final_count:.1f}%)")
     logger.info(f"  With Divisive Score: {with_divisive} ({100 * with_divisive / final_count:.1f}%)")
-    logger.info(f"  With Box Office: {with_box_office} ({100 * with_box_office / final_count:.1f}%)")
+    logger.info(f"  With Budget: {with_budget} ({100 * with_budget / final_count:.1f}%)")
+    logger.info(f"  With Revenue: {with_revenue} ({100 * with_revenue / final_count:.1f}%)")
 
     output_path = f"{GOLD_PATH}/fact_movie_metrics"
     logger.info(f"  Writing to: {output_path}")

@@ -124,6 +124,8 @@ def clean_tmdb_movies(spark: SparkSession):
         map_genre_udf(col("genre_ids")).alias("genres_array"),
         col("original_language"),
         col("adult"),
+        col("budget"),
+        col("revenue"),
     ).withColumn("cleaned_date", current_date())
 
     with_poster = cleaned.filter(col("poster_url").isNotNull()).count()

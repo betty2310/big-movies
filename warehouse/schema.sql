@@ -99,7 +99,8 @@ CREATE TABLE fact_movie_metrics (
     tomatometer_score   INTEGER,
     audience_score      INTEGER,
     divisive_score      INTEGER,
-    box_office_revenue  BIGINT
+    budget              BIGINT,
+    revenue             BIGINT
 );
 
 CREATE INDEX idx_fact_movie_metrics_movie_id ON fact_movie_metrics(movie_id);
@@ -157,7 +158,8 @@ SELECT
     f.tomatometer_score,
     f.audience_score,
     f.divisive_score,
-    f.box_office_revenue
+    f.budget,
+    f.revenue
 FROM dim_movie m
 LEFT JOIN fact_movie_metrics f ON m.movie_id = f.movie_id;
 
