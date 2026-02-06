@@ -65,15 +65,15 @@ function generateBrowseUrls(): string[] {
     }
 
     for (const genre of GENRES) {
-      urls.push(`${base}/genre:${genre}`);
-      urls.push(`${base}/genre:${genre}~sort:newest`);
-      urls.push(`${base}/genre:${genre}~sort:popular`);
+      urls.push(`${base}/genres:${genre}`);
+      urls.push(`${base}/genres:${genre}~sort:newest`);
+      urls.push(`${base}/genres:${genre}~sort:popular`);
     }
 
     for (const critic of CRITICS_FILTERS) {
       urls.push(`${base}/critics:${critic}`);
       for (const genre of GENRES) {
-        urls.push(`${base}/critics:${critic}~genre:${genre}`);
+        urls.push(`${base}/critics:${critic}~genres:${genre}`);
       }
     }
 
@@ -85,7 +85,7 @@ function generateBrowseUrls(): string[] {
   urls.push("/browse/movies_coming_soon");
 
   for (const genre of GENRES) {
-    urls.push(`/browse/movies_coming_soon/genre:${genre}`);
+    urls.push(`/browse/movies_coming_soon/genres:${genre}`);
   }
 
   return urls;
@@ -108,6 +108,10 @@ interface MovieRecord {
   scraped_at: string;
 }
 
+function generateRtId(slug: string): string {
+  return slug.replace(/_(19|20)\d{2}$/, "");
+}
+
 function getRandomUserAgent(): string {
   const idx = Math.floor(Math.random() * USER_AGENTS.length);
   return USER_AGENTS[idx] as string;
@@ -116,7 +120,8 @@ function getRandomUserAgent(): string {
 function getHeaders(): Record<string, string> {
   return {
     "User-Agent": getRandomUserAgent(),
-    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    Accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
     "Accept-Encoding": "gzip, deflate, br",
     Referer: "https://www.rottentomatoes.com/",
@@ -139,7 +144,9 @@ async function fetchWithRetry(url: string): Promise<string | null> {
       });
 
       if (response.status === 429 || response.status === 403) {
-        console.log(`  Rate limited (${response.status}). Waiting ${RETRY_DELAY_MS * attempt}ms...`);
+        console.log(
+          `  Rate limited (${response.status}). Waiting ${RETRY_DELAY_MS * attempt}ms...`,
+        );
         await delay(RETRY_DELAY_MS * attempt);
         continue;
       }
@@ -186,7 +193,9 @@ function initDatabase(): Database {
 async function discoverMovieSlugs(db: Database): Promise<number> {
   console.log("\n=== Phase 1: Discovering movie slugs from browse pages ===\n");
 
-  const insertStmt = db.prepare(`INSERT OR IGNORE INTO movies (slug) VALUES (?)`);
+  const insertStmt = db.prepare(
+    `INSERT OR IGNORE INTO movies (slug) VALUES (?)`,
+  );
   let totalDiscovered = 0;
 
   for (const browsePath of BROWSE_URLS) {
@@ -259,7 +268,9 @@ function parseMoviePage(html: string, slug: string): MovieRecord | null {
       title = jsonLd.name || "";
 
       if (jsonLd.director) {
-        const directors = Array.isArray(jsonLd.director) ? jsonLd.director : [jsonLd.director];
+        const directors = Array.isArray(jsonLd.director)
+          ? jsonLd.director
+          : [jsonLd.director];
         director = directors
           .map((d) => d.name)
           .filter(Boolean)
@@ -300,13 +311,26 @@ function parseMoviePage(html: string, slug: string): MovieRecord | null {
   }
 
   $('[data-qa="movie-info-item"], .info-item, li').each((_, el) => {
-    const label = $(el).find('[data-qa="movie-info-item-label"], .info-item-label, dt, b').text().trim().toLowerCase();
-    const value = $(el).find('[data-qa="movie-info-item-value"], .info-item-value, dd, span, time').text().trim();
+    const label = $(el)
+      .find('[data-qa="movie-info-item-label"], .info-item-label, dt, b')
+      .text()
+      .trim()
+      .toLowerCase();
+    const value = $(el)
+      .find(
+        '[data-qa="movie-info-item-value"], .info-item-value, dd, span, time',
+      )
+      .text()
+      .trim();
 
     if (label.includes("box office") && value && !boxOffice) {
       boxOffice = value;
     }
-    if ((label.includes("release date") || label.includes("in theaters")) && value && !releaseDate) {
+    if (
+      (label.includes("release date") || label.includes("in theaters")) &&
+      value &&
+      !releaseDate
+    ) {
       releaseDate = value;
       const yearMatch = value.match(/\b(19\d{2}|20\d{2})\b/);
       if (yearMatch && yearMatch[1]) {
@@ -326,7 +350,7 @@ function parseMoviePage(html: string, slug: string): MovieRecord | null {
   }
 
   return {
-    rt_id: slug,
+    rt_id: generateRtId(slug),
     slug,
     title,
     tomatometer_score: tomatometer,
@@ -345,12 +369,16 @@ async function scrapeMovieDetails(db: Database): Promise<MovieRecord[]> {
   console.log("\n=== Phase 2: Scraping movie detail pages ===\n");
 
   const pendingMovies = db
-    .prepare(`SELECT slug FROM movies WHERE status = 'pending' AND retry_count < ? ORDER BY created_at`)
+    .prepare(
+      `SELECT slug FROM movies WHERE status = 'pending' AND retry_count < ? ORDER BY created_at`,
+    )
     .all(MAX_RETRIES) as { slug: string }[];
 
   console.log(`Found ${pendingMovies.length} movies to scrape\n`);
 
-  const updateStmt = db.prepare(`UPDATE movies SET status = ?, retry_count = retry_count + 1 WHERE slug = ?`);
+  const updateStmt = db.prepare(
+    `UPDATE movies SET status = ?, retry_count = retry_count + 1 WHERE slug = ?`,
+  );
 
   const records: MovieRecord[] = [];
   let processed = 0;
@@ -383,7 +411,7 @@ async function scrapeMovieDetails(db: Database): Promise<MovieRecord[]> {
 
     if (processed % 25 === 0 || processed === pendingMovies.length) {
       console.log(
-        `Progress: ${processed}/${pendingMovies.length} | Scraped: ${scraped} | Filtered (pre-${START_YEAR}): ${filtered} | Failed: ${failed}`
+        `Progress: ${processed}/${pendingMovies.length} | Scraped: ${scraped} | Filtered (pre-${START_YEAR}): ${filtered} | Failed: ${failed}`,
       );
     }
 
@@ -398,7 +426,9 @@ async function uploadFile(filePath: string, key: string): Promise<void> {
   const fileStream = createReadStream(filePath);
   const fileStats = await stat(filePath);
 
-  console.log(`Uploading ${filePath} (${(fileStats.size / 1024 / 1024).toFixed(2)} MB) to s3://${BUCKET}/${key}`);
+  console.log(
+    `Uploading ${filePath} (${(fileStats.size / 1024 / 1024).toFixed(2)} MB) to s3://${BUCKET}/${key}`,
+  );
 
   const upload = new Upload({
     client: s3Client,
@@ -423,7 +453,11 @@ async function uploadFile(filePath: string, key: string): Promise<void> {
   console.log(`\n  ✓ Uploaded successfully`);
 }
 
-async function writeChunk(movies: MovieRecord[], chunkNumber: number, timestamp: string): Promise<void> {
+async function writeChunk(
+  movies: MovieRecord[],
+  chunkNumber: number,
+  timestamp: string,
+): Promise<void> {
   const filename = `movies_${String(chunkNumber).padStart(4, "0")}.ndjson`;
   const localPath = join(DATA_DIR, filename);
   const s3Key = `${RAW_ZONE_PREFIX}/${timestamp}/${filename}`;
@@ -480,11 +514,16 @@ async function uploadToS3(movies: MovieRecord[]): Promise<void> {
 
   const metadataPath = join(DATA_DIR, "metadata.json");
   await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-  await uploadFile(metadataPath, `${RAW_ZONE_PREFIX}/${timestamp}/metadata.json`);
+  await uploadFile(
+    metadataPath,
+    `${RAW_ZONE_PREFIX}/${timestamp}/metadata.json`,
+  );
 
   await rm(DATA_DIR, { recursive: true, force: true });
 
-  console.log(`\n✓ Uploaded to s3://${BUCKET}/${RAW_ZONE_PREFIX}/${timestamp}/`);
+  console.log(
+    `\n✓ Uploaded to s3://${BUCKET}/${RAW_ZONE_PREFIX}/${timestamp}/`,
+  );
 }
 
 async function main(): Promise<void> {
@@ -493,9 +532,17 @@ async function main(): Promise<void> {
   const db = initDatabase();
 
   try {
-    const existingCount = (db.prepare("SELECT COUNT(*) as count FROM movies").get() as { count: number }).count;
+    const existingCount = (
+      db.prepare("SELECT COUNT(*) as count FROM movies").get() as {
+        count: number;
+      }
+    ).count;
     const pendingCount = (
-      db.prepare("SELECT COUNT(*) as count FROM movies WHERE status = 'pending'").get() as { count: number }
+      db
+        .prepare(
+          "SELECT COUNT(*) as count FROM movies WHERE status = 'pending'",
+        )
+        .get() as { count: number }
     ).count;
 
     if (existingCount === 0) {
@@ -504,7 +551,9 @@ async function main(): Promise<void> {
       console.log(`Found ${existingCount} movies in database, all processed.`);
       console.log("Delete rt_crawl_state.db to start fresh discovery.\n");
     } else {
-      console.log(`Resuming: ${pendingCount} pending movies out of ${existingCount} total\n`);
+      console.log(
+        `Resuming: ${pendingCount} pending movies out of ${existingCount} total\n`,
+      );
     }
 
     const movies = await scrapeMovieDetails(db);
@@ -513,7 +562,9 @@ async function main(): Promise<void> {
       await uploadToS3(movies);
     }
 
-    const stats = db.prepare(`SELECT status, COUNT(*) as count FROM movies GROUP BY status`).all() as {
+    const stats = db
+      .prepare(`SELECT status, COUNT(*) as count FROM movies GROUP BY status`)
+      .all() as {
       status: string;
       count: number;
     }[];
