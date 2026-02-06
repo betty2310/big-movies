@@ -12,6 +12,8 @@ const DATA_DIR = "./tmdb-data";
 const STATE_FILE = "./.ingestion_state";
 const CHUNK_SIZE = 1000;
 const REQUEST_DELAY_MS = 25;
+const DETAIL_DELAY_MS = 30;
+const DETAIL_CONCURRENCY = 5;
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
 const MAX_PAGES_PER_SORT = 500;
@@ -90,6 +92,58 @@ async function discoverMovies(
 ): Promise<DiscoverResponse> {
   const url = `${BASE_URL}/discover/movie?primary_release_year=${year}&sort_by=popularity.desc&page=${page}&include_adult=false&include_video=false`;
   return fetchWithRetry<DiscoverResponse>(url);
+}
+
+interface MovieDetails {
+  id: number;
+  budget: number;
+  revenue: number;
+  [key: string]: unknown;
+}
+
+async function fetchMovieDetails(movieId: number): Promise<MovieDetails> {
+  const url = `${BASE_URL}/movie/${movieId}`;
+  return fetchWithRetry<MovieDetails>(url);
+}
+
+async function enrichWithBoxOffice(
+  movies: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  const enriched: Record<string, unknown>[] = [];
+
+  for (let i = 0; i < movies.length; i += DETAIL_CONCURRENCY) {
+    const batch = movies.slice(i, i + DETAIL_CONCURRENCY);
+    const results = await Promise.allSettled(
+      batch.map(async (movie) => {
+        const movieId = movie.id as number;
+        const details = await fetchMovieDetails(movieId);
+        return {
+          ...movie,
+          budget: details.budget ?? 0,
+          revenue: details.revenue ?? 0,
+        };
+      }),
+    );
+
+    for (let j = 0; j < results.length; j++) {
+      const result = results[j]!;
+      const original = batch[j]!;
+      if (result.status === "fulfilled") {
+        enriched.push(result.value);
+      } else {
+        console.warn(
+          `  ⚠ Failed to fetch details for movie ${original.id}, keeping without box office`,
+        );
+        enriched.push({ ...original, budget: null, revenue: null });
+      }
+    }
+
+    if (i + DETAIL_CONCURRENCY < movies.length) {
+      await delay(DETAIL_DELAY_MS);
+    }
+  }
+
+  return enriched;
 }
 
 async function loadState(): Promise<IngestionState> {
@@ -206,7 +260,11 @@ async function main(): Promise<void> {
 
         if (movieBuffer.length >= CHUNK_SIZE) {
           console.log(
-            `\n  Writing chunk ${chunkNumber} (${movieBuffer.length} movies)...`,
+            `\n  Enriching chunk ${chunkNumber} with box office data (${movieBuffer.length} movies)...`,
+          );
+          movieBuffer = await enrichWithBoxOffice(movieBuffer);
+          console.log(
+            `  Writing chunk ${chunkNumber} (${movieBuffer.length} movies)...`,
           );
           await writeChunk(movieBuffer, chunkNumber, timestamp || "");
 
@@ -240,7 +298,11 @@ async function main(): Promise<void> {
 
   if (movieBuffer.length > 0) {
     console.log(
-      `\n  Writing final chunk ${chunkNumber} (${movieBuffer.length} movies)...`,
+      `\n  Enriching final chunk ${chunkNumber} with box office data (${movieBuffer.length} movies)...`,
+    );
+    movieBuffer = await enrichWithBoxOffice(movieBuffer);
+    console.log(
+      `  Writing final chunk ${chunkNumber} (${movieBuffer.length} movies)...`,
     );
     await writeChunk(movieBuffer, chunkNumber, timestamp || "");
   }
