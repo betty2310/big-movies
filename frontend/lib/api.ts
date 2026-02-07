@@ -1,5 +1,4 @@
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://77.42.41.13:8000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 async function fetchAPI<T>(
   endpoint: string,
@@ -119,7 +118,77 @@ export interface MPAADistribution {
   avg_rating: number;
 }
 
-// 6. Movies Detail
+// 6. Finance & Box Office
+export interface TopRevenueMovie {
+  movie_id: number;
+  title: string;
+  year: number;
+  poster_url: string | null;
+  revenue: number;
+  budget: number;
+  profit: number;
+  imdb_rating: number;
+}
+
+export interface ROIMovie {
+  movie_id: number;
+  title: string;
+  year: number;
+  poster_url: string | null;
+  budget: number;
+  revenue: number;
+  profit: number;
+  revenue_multiple: number;
+  imdb_rating: number;
+}
+
+export interface GenreProfitability {
+  genre_name: string;
+  movie_count: number;
+  median_roi: number;
+  p25_roi: number;
+  p75_roi: number;
+  avg_profit: number;
+}
+
+export interface ProfitabilityTrend {
+  year: number;
+  movie_count: number;
+  avg_budget: number;
+  avg_revenue: number;
+  avg_profit: number;
+  median_roi: number;
+}
+
+export interface BudgetVsRating {
+  budget: number;
+  rating: number;
+  revenue: number;
+  title: string;
+  year: number;
+}
+
+export interface StarPowerROI {
+  person_id: string;
+  name: string;
+  movie_count: number;
+  median_roi: number;
+  avg_profit: number;
+}
+
+export interface ValueFrontierMovie {
+  movie_id: number;
+  title: string;
+  year: number;
+  poster_url: string | null;
+  budget: number;
+  revenue: number;
+  revenue_multiple: number;
+  imdb_rating: number;
+  value_score: number;
+}
+
+// 7. Movies Detail
 export interface MovieDetail {
   movie_id: number;
   title: string;
@@ -155,7 +224,7 @@ export interface MovieDetailResponse {
   cast: MovieCast[];
 }
 
-// 7. Person Detail
+// 8. Person Detail
 export interface PersonInfo {
   person_id: string;
   name: string;
@@ -238,6 +307,66 @@ export const api = {
       }),
     mpaaDistribution: () =>
       fetchAPI<MPAADistribution[]>("/temporal/mpaa-distribution"),
+  },
+  finance: {
+    topRevenue: (limit = 10, startYear = 1980, endYear = 2025) =>
+      fetchAPI<TopRevenueMovie[]>("/finance/top-revenue", {
+        limit,
+        start_year: startYear,
+        end_year: endYear,
+      }),
+    topBudget: (limit = 10, startYear = 1980, endYear = 2025) =>
+      fetchAPI<TopRevenueMovie[]>("/finance/top-budget", {
+        limit,
+        start_year: startYear,
+        end_year: endYear,
+      }),
+    topProfit: (
+      limit = 10,
+      direction = "best",
+      startYear = 1980,
+      endYear = 2025,
+    ) =>
+      fetchAPI<TopRevenueMovie[]>("/finance/top-profit", {
+        limit,
+        direction,
+        start_year: startYear,
+        end_year: endYear,
+      }),
+    roiLeaderboard: (limit = 15, direction = "best", minBudget = 1000000) =>
+      fetchAPI<ROIMovie[]>("/finance/roi-leaderboard", {
+        limit,
+        direction,
+        min_budget: minBudget,
+      }),
+    genreProfitability: (
+      startYear = 1980,
+      endYear = 2025,
+      minBudget = 1000000,
+    ) =>
+      fetchAPI<GenreProfitability[]>("/finance/genre-profitability", {
+        start_year: startYear,
+        end_year: endYear,
+        min_budget: minBudget,
+      }),
+    profitabilityTrend: (startYear = 1980, endYear = 2025) =>
+      fetchAPI<ProfitabilityTrend[]>("/finance/profitability-trend", {
+        start_year: startYear,
+        end_year: endYear,
+      }),
+    budgetVsRating: (sampleSize = 500, source = "imdb") =>
+      fetchAPI<BudgetVsRating[]>("/finance/budget-vs-rating", {
+        sample_size: sampleSize,
+        source,
+      }),
+    starPowerRoi: (category = "actor", limit = 15, minMovies = 5) =>
+      fetchAPI<StarPowerROI[]>("/finance/star-power-roi", {
+        category,
+        limit,
+        min_movies: minMovies,
+      }),
+    valueFrontier: (limit = 30) =>
+      fetchAPI<ValueFrontierMovie[]>("/finance/value-frontier", { limit }),
   },
   movies: {
     detail: (movieId: string) =>

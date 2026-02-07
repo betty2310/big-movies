@@ -14,6 +14,13 @@ import {
   TopProlificTable,
   TopRatedTable,
   ActorNetworkTable,
+  TopRevenueChart,
+  ROILeaderboardChart,
+  GenreProfitabilityChart,
+  ProfitabilityTrendChart,
+  BudgetVsRatingChart,
+  StarPowerROIChart,
+  ValueFrontierChart,
 } from "@/components/dashboard";
 import { Film, Star, TrendingUp, Globe } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +45,15 @@ export default async function DashboardPage() {
     topRatedActors,
     topRatedDirectors,
     actorNetwork,
+    topRevenue,
+    topProfit,
+    roiLeaderboard,
+    genreProfitability,
+    profitabilityTrend,
+    budgetVsRating,
+    starPowerActors,
+    starPowerDirectors,
+    valueFrontier,
   ] = await Promise.all([
     api.overview.moviesPerYear(1980, 2022),
     api.overview.topPopular(10),
@@ -55,6 +71,15 @@ export default async function DashboardPage() {
     api.people.topRated("actor", 5, 10),
     api.people.topRated("director", 5, 10),
     api.people.actorNetwork(3, 15),
+    api.finance.topRevenue(10),
+    api.finance.topProfit(10, "best"),
+    api.finance.roiLeaderboard(15),
+    api.finance.genreProfitability(),
+    api.finance.profitabilityTrend(1990, 2022),
+    api.finance.budgetVsRating(500),
+    api.finance.starPowerRoi("actor", 10),
+    api.finance.starPowerRoi("director", 10),
+    api.finance.valueFrontier(30),
   ]);
 
   const totalMovies = moviesPerYear.reduce((sum, y) => sum + y.count, 0);
@@ -73,8 +98,6 @@ export default async function DashboardPage() {
     tmdb_avg: p.tmdb_avg,
     ml_avg: p.ml_avg * 2,
   }));
-
-  console.log(topMovies);
 
   const genreCoOccurrence_ = genreCoOccurrence.slice(1, 10);
   return (
@@ -200,7 +223,40 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {/* Section 5: Temporal Features */}
+        {/* Section 5: Finance & Box Office */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6">💰 Tài chính & Phòng vé</h2>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <TopRevenueChart data={topRevenue} />
+            <TopRevenueChart
+              data={topProfit}
+              title="Top lợi nhuận"
+              description="Những bộ phim có lợi nhuận cao nhất"
+              dataKey="profit"
+            />
+          </div>
+          <div className="mt-6">
+            <ProfitabilityTrendChart data={profitabilityTrend} />
+          </div>
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <ROILeaderboardChart data={roiLeaderboard} />
+            <GenreProfitabilityChart data={genreProfitability} />
+          </div>
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <BudgetVsRatingChart data={budgetVsRating} />
+          </div>
+          <div className="mt-6">
+            <StarPowerROIChart
+              actors={starPowerActors}
+              directors={starPowerDirectors}
+            />
+          </div>
+          <div className="mt-6">
+            <ValueFrontierChart data={valueFrontier} />
+          </div>
+        </section>
+
+        {/* Section 6: Temporal Features */}
         <section>
           <h2 className="text-2xl font-bold mb-6">⏱️ Phân tích thời gian</h2>
           <RuntimeTrendChart data={runtimeTrend} />
