@@ -40,7 +40,8 @@ async def get_top_popular(
     rows = await db.fetch(
         f"""
         SELECT m.movie_id, m.title, m.year, m.poster_url,
-               f.imdb_votes, f.tmdb_popularity, f.imdb_rating
+               f.imdb_votes, f.tmdb_popularity, f.imdb_rating,
+               f.budget, f.revenue
         FROM dim_movie m
         JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
         WHERE f.{metric} IS NOT NULL

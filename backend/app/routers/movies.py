@@ -53,7 +53,8 @@ async def get_movies(
 
     query = f"""
         SELECT m.movie_id, m.title, m.year, m.runtime, m.poster_url,
-               f.imdb_rating, f.imdb_votes, f.tmdb_rating
+               f.imdb_rating, f.imdb_votes, f.tmdb_rating,
+               f.budget, f.revenue
         FROM dim_movie m
         LEFT JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
         {where_clause}
@@ -89,7 +90,8 @@ async def get_movie_detail(
         """
         SELECT m.*, f.ml_avg_rating, f.ml_rating_count,
                f.imdb_rating, f.imdb_votes, f.tmdb_rating, f.tmdb_votes,
-               f.tomatometer_score, f.audience_score, f.divisive_score
+               f.tomatometer_score, f.audience_score, f.divisive_score,
+               f.budget, f.revenue
         FROM dim_movie m
         LEFT JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
         WHERE m.movie_id = $1

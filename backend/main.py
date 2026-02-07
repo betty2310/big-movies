@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import lifespan
-from app.routers import genres, movies, overview, people, ratings, temporal
+from app.routers import finance, genres, movies, overview, people, ratings, temporal
 
 app = FastAPI(
     title="Big Movies API",
@@ -19,6 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(finance.router, prefix="/api")
 app.include_router(overview.router, prefix="/api")
 app.include_router(ratings.router, prefix="/api")
 app.include_router(genres.router, prefix="/api")

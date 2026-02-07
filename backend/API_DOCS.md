@@ -80,7 +80,9 @@ GET /api/overview/top-popular
     "poster_url": "https://...",
     "imdb_votes": 2500000,
     "tmdb_popularity": 98.5,
-    "imdb_rating": 9.3
+    "imdb_rating": 9.3,
+    "budget": 63000000,
+    "revenue": 28341469
   }
 ]
 ```
@@ -530,7 +532,328 @@ GET /api/temporal/mpaa-trend
 
 ---
 
-## 6. Movies
+## 6. Finance & Box Office
+
+### Get Top Revenue Movies
+
+Returns top movies by total revenue.
+
+```
+GET /api/finance/top-revenue
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | int | 10 | Number of results (max 100) |
+| `start_year` | int | 1900 | Start year filter |
+| `end_year` | int | 2030 | End year filter |
+
+**Response:**
+
+```json
+[
+  {
+    "movie_id": 1,
+    "title": "Avatar",
+    "year": 2009,
+    "poster_url": "https://...",
+    "revenue": 2923706026,
+    "budget": 237000000,
+    "profit": 2686706026,
+    "imdb_rating": 7.9
+  }
+]
+```
+
+---
+
+### Get Top Budget Movies
+
+Returns top movies by production budget.
+
+```
+GET /api/finance/top-budget
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | int | 10 | Number of results (max 100) |
+| `start_year` | int | 1900 | Start year filter |
+| `end_year` | int | 2030 | End year filter |
+
+**Response:**
+
+```json
+[
+  {
+    "movie_id": 1,
+    "title": "Pirates of the Caribbean: On Stranger Tides",
+    "year": 2011,
+    "poster_url": "https://...",
+    "budget": 379000000,
+    "revenue": 1045713802,
+    "profit": 666713802,
+    "imdb_rating": 6.6
+  }
+]
+```
+
+---
+
+### Get Top Profit Movies
+
+Returns top movies by profit (revenue - budget). Use `direction=worst` for biggest flops.
+
+```
+GET /api/finance/top-profit
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | int | 10 | Number of results (max 100) |
+| `direction` | string | "best" | `best` for most profitable, `worst` for biggest flops |
+| `start_year` | int | 1900 | Start year filter |
+| `end_year` | int | 2030 | End year filter |
+
+**Response:**
+
+```json
+[
+  {
+    "movie_id": 1,
+    "title": "Avatar",
+    "year": 2009,
+    "poster_url": "https://...",
+    "budget": 237000000,
+    "revenue": 2923706026,
+    "profit": 2686706026,
+    "imdb_rating": 7.9
+  }
+]
+```
+
+---
+
+### Get ROI Leaderboard
+
+Returns movies ranked by return on investment (revenue / budget).
+
+```
+GET /api/finance/roi-leaderboard
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `direction` | string | "best" | `best` or `worst` |
+| `min_budget` | int | 1000000 | Minimum budget filter (avoids micro-budget noise) |
+| `start_year` | int | 1980 | Start year |
+| `end_year` | int | 2025 | End year |
+| `limit` | int | 25 | Number of results (max 100) |
+
+**Response:**
+
+```json
+[
+  {
+    "movie_id": 1,
+    "title": "Paranormal Activity",
+    "year": 2007,
+    "poster_url": "https://...",
+    "budget": 15000,
+    "revenue": 193355800,
+    "profit": 193340800,
+    "revenue_multiple": 12890.39,
+    "imdb_rating": 6.3
+  }
+]
+```
+
+---
+
+### Get Genre Profitability
+
+Returns genre profitability with median ROI and interquartile range for risk assessment.
+
+```
+GET /api/finance/genre-profitability
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `start_year` | int | 1980 | Start year |
+| `end_year` | int | 2025 | End year |
+| `min_budget` | int | 1000000 | Minimum budget filter |
+| `min_movies` | int | 20 | Minimum movies to qualify |
+
+**Response:**
+
+```json
+[
+  {
+    "genre_name": "Horror",
+    "movie_count": 350,
+    "median_roi": 3.45,
+    "p25_roi": 1.20,
+    "p75_roi": 7.80,
+    "avg_profit": 45000000
+  }
+]
+```
+
+---
+
+### Get Profitability Trend
+
+Returns budget, revenue, and ROI trends by year.
+
+```
+GET /api/finance/profitability-trend
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `start_year` | int | 1980 | Start year |
+| `end_year` | int | 2025 | End year |
+| `min_budget` | int | 0 | Minimum budget filter |
+
+**Response:**
+
+```json
+[
+  {
+    "year": 2020,
+    "movie_count": 150,
+    "avg_budget": 45000000,
+    "avg_revenue": 120000000,
+    "avg_profit": 75000000,
+    "median_roi": 2.15
+  }
+]
+```
+
+---
+
+### Get Budget vs Rating
+
+Returns scatter plot data for budget-rating correlation analysis.
+
+```
+GET /api/finance/budget-vs-rating
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `source` | string | "imdb" | Rating source: `imdb`, `tmdb`, `movielens` |
+| `start_year` | int | 1980 | Start year |
+| `end_year` | int | 2025 | End year |
+| `min_budget` | int | 1000000 | Minimum budget |
+| `sample_size` | int | 1000 | Number of random samples |
+
+**Response:**
+
+```json
+[
+  {
+    "budget": 160000000,
+    "rating": 8.8,
+    "revenue": 836836967,
+    "title": "Inception",
+    "year": 2010
+  }
+]
+```
+
+---
+
+### Get Star Power ROI
+
+Returns actors/directors ranked by median ROI of their filmography.
+
+```
+GET /api/finance/star-power-roi
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `category` | string | "actor" | Person type: `actor`, `director`, `writer` |
+| `start_year` | int | 1980 | Start year |
+| `end_year` | int | 2025 | End year |
+| `min_budget` | int | 1000000 | Minimum budget filter |
+| `min_movies` | int | 5 | Minimum films to qualify |
+| `limit` | int | 25 | Number of results (max 100) |
+
+**Response:**
+
+```json
+[
+  {
+    "person_id": "nm0000229",
+    "name": "Steven Spielberg",
+    "movie_count": 30,
+    "median_roi": 4.52,
+    "avg_profit": 250000000
+  }
+]
+```
+
+---
+
+### Get Value Frontier
+
+Returns movies with the best combination of high rating and high ROI (Pareto-optimal value).
+
+```
+GET /api/finance/value-frontier
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `start_year` | int | 1980 | Start year |
+| `end_year` | int | 2025 | End year |
+| `min_budget` | int | 0 | Minimum budget |
+| `max_budget` | int | - | Maximum budget (optional) |
+| `min_rating` | float | - | Minimum IMDb rating (optional) |
+| `limit` | int | 50 | Number of results (max 100) |
+
+**Response:**
+
+```json
+[
+  {
+    "movie_id": 1,
+    "title": "The Blair Witch Project",
+    "year": 1999,
+    "poster_url": "https://...",
+    "budget": 60000,
+    "revenue": 248639099,
+    "revenue_multiple": 4143.98,
+    "imdb_rating": 6.5,
+    "value_score": 53.12
+  }
+]
+```
+
+---
+
+## 7. Movies
 
 ### List Movies
 
@@ -566,7 +889,9 @@ GET /api/movies
       "poster_url": "https://...",
       "imdb_rating": 8.8,
       "imdb_votes": 2200000,
-      "tmdb_rating": 8.4
+      "tmdb_rating": 8.4,
+      "budget": 160000000,
+      "revenue": 836836967
     }
   ],
   "total": 50000,
@@ -608,7 +933,9 @@ GET /api/movies/{movie_id}
     "imdb_votes": 2200000,
     "tmdb_rating": 8.4,
     "tomatometer_score": 87,
-    "audience_score": 91
+    "audience_score": 91,
+    "budget": 160000000,
+    "revenue": 836836967
   },
   "genres": [
     { "genre_id": 1, "genre_name": "Action" },
@@ -628,7 +955,7 @@ GET /api/movies/{movie_id}
 
 ---
 
-## Error Responses
+## 8. Error Responses
 
 All endpoints return standard HTTP error codes:
 
