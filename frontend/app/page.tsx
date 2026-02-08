@@ -55,7 +55,7 @@ export default async function DashboardPage() {
     starPowerDirectors,
     valueFrontier,
   ] = await Promise.all([
-    api.overview.moviesPerYear(1980, 2022),
+    api.overview.moviesPerYear(1950, 2025),
     api.overview.topPopular(10),
     api.overview.languageDistribution(),
     api.ratings.distribution("imdb"),
@@ -125,7 +125,7 @@ export default async function DashboardPage() {
               <div className="text-2xl font-bold">
                 {totalMovies.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">Từ năm 1980-2024</p>
+              <p className="text-xs text-muted-foreground">Từ năm 1950-2025</p>
             </CardContent>
           </Card>
           <Card>
