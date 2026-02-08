@@ -106,7 +106,8 @@ export default async function DashboardPage() {
         <div className="container mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold">🎬 Big Movies Dashboard</h1>
           <p className="text-muted-foreground">
-            Phân tích dữ liệu phim từ MovieLens, IMDb, TMDB & Rotten Tomatoes
+            Trực quan hóa dữ liệu phim từ MovieLens, IMDb, TMDB & Rotten
+            Tomatoes
           </p>
         </div>
       </header>
