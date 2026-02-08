@@ -22,8 +22,8 @@ export function CultClassicsTable({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Phim ẩn danh chất lượng</CardTitle>
-        <CardDescription>Những viên ngọc ẩn - điểm cao nhưng ít người biết</CardDescription>
+        <CardTitle>Viên ngọc ẩn — điểm IMDb cao nhưng ít ai biết đến</CardTitle>
+        <CardDescription>Phim có điểm IMDb ≥ 8.0 nhưng ít hơn 10,000 lượt đánh giá</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -51,7 +51,7 @@ export function CultClassicsTable({ data }: Props) {
                 <p className="text-sm text-muted-foreground">{movie.year}</p>
               </div>
               <div className="text-right">
-                <p className="font-medium text-green-500">⭐ {movie.imdb_rating.toFixed(1)}</p>
+                <p className="font-medium text-chart-positive">⭐ {movie.imdb_rating.toFixed(1)}</p>
                 <p className="text-xs text-muted-foreground">
                   {movie.imdb_votes.toLocaleString()} votes
                 </p>

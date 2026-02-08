@@ -16,8 +16,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
+import { chartColors, tooltipStyle, formatMoney } from "@/lib/chart-theme";
 
 interface StarPowerROI {
   person_id: string;
@@ -32,13 +32,7 @@ interface Props {
   directors: StarPowerROI[];
 }
 
-function formatMoney(value: number): string {
-  if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
-  return `$${value}`;
-}
-
-function StarPowerBar({ data, label }: { data: StarPowerROI[]; label: string }) {
+function StarPowerBar({ data, label, color }: { data: StarPowerROI[]; label: string; color: string }) {
   const chartData = useMemo(
     () =>
       data.map((p) => ({
@@ -72,11 +66,8 @@ function StarPowerBar({ data, label }: { data: StarPowerROI[]; label: string }) 
               tick={{ fontSize: 11 }}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-              }}
-              labelStyle={{ color: "hsl(var(--foreground))" }}
+              contentStyle={{ ...tooltipStyle.contentStyle }}
+              labelStyle={{ ...tooltipStyle.labelStyle }}
               formatter={(
                 _value: number | undefined,
                 _name: string | undefined,
@@ -90,14 +81,7 @@ function StarPowerBar({ data, label }: { data: StarPowerROI[]; label: string }) 
                 ];
               }}
             />
-            <Bar dataKey="median_roi" radius={[0, 4, 4, 0]}>
-              {chartData.map((_, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={`hsl(var(--chart-${(index % 5) + 1}))`}
-                />
-              ))}
-            </Bar>
+            <Bar dataKey="median_roi" fill={color} radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -109,15 +93,15 @@ export function StarPowerROIChart({ actors, directors }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sức mạnh ngôi sao — ROI</CardTitle>
+        <CardTitle>Ngôi sao nào mang lại lợi tức đầu tư tốt nhất?</CardTitle>
         <CardDescription>
           Diễn viên & đạo diễn xếp hạng theo ROI trung vị của sự nghiệp
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid gap-6 lg:grid-cols-2">
-          <StarPowerBar data={actors} label="🎭 Diễn viên" />
-          <StarPowerBar data={directors} label="🎬 Đạo diễn" />
+          <StarPowerBar data={actors} label="Diễn viên" color={chartColors.categorical[0]} />
+          <StarPowerBar data={directors} label="Đạo diễn" color={chartColors.categorical[1]} />
         </div>
       </CardContent>
     </Card>

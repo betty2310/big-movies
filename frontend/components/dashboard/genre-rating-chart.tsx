@@ -1,8 +1,9 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from "recharts";
 import { useMemo } from "react";
+import { chartColors, tooltipStyle } from "@/lib/chart-theme";
 
 interface GenreRating {
   genre_name: string;
@@ -24,8 +25,8 @@ export function GenreRatingChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Điểm trung bình theo thể loại</CardTitle>
-        <CardDescription>So sánh chất lượng giữa các thể loại</CardDescription>
+        <CardTitle>Thể loại nào được đánh giá cao nhất?</CardTitle>
+        <CardDescription>Điểm trung bình IMDb theo thể loại (top 15, sắp xếp giảm dần)</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[400px]">
@@ -33,26 +34,21 @@ export function GenreRatingChart({ data }: Props) {
             <BarChart
               data={sortedData}
               layout="vertical"
-              margin={{ top: 10, right: 30, left: 80, bottom: 0 }}
+              margin={{ top: 10, right: 40, left: 80, bottom: 0 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis type="number" domain={[0, 10]} className="text-xs" />
-              <YAxis type="category" dataKey="genre_name" className="text-xs" width={70} />
+              <XAxis type="number" domain={[0, 10]} className="text-xs" label={{ value: "Điểm IMDb", position: "insideBottom", offset: -2, style: { fontSize: 11 } }} />
+              <YAxis type="category" dataKey="genre_name" className="text-xs" width={70} label={{ value: "Thể loại", angle: -90, position: "insideLeft", offset: 10, style: { fontSize: 11 } }} />
               <Tooltip
-                contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(value, _name, props) => {
                   const payload = props.payload as GenreRating;
                   return [`${Number(value).toFixed(2)} (${payload.movie_count} phim)`, "Điểm TB"];
                 }}
               />
-              <Bar dataKey="avg_rating" radius={[0, 4, 4, 0]}>
-                {sortedData.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={`hsl(var(--chart-${(index % 5) + 1}))`}
-                  />
-                ))}
+              <Bar dataKey="avg_rating" fill={chartColors.categorical[1]} radius={[0, 4, 4, 0]}>
+                <LabelList dataKey="avg_rating" position="right" formatter={(v) => Number(v).toFixed(1)} style={{ fill: "var(--foreground)", fontSize: 11 }} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>

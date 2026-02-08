@@ -15,7 +15,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
+import { chartColors, formatMoney } from "@/lib/chart-theme";
 
 interface BudgetVsRating {
   budget: number;
@@ -29,19 +31,13 @@ interface Props {
   data: BudgetVsRating[];
 }
 
-function formatMoney(value: number): string {
-  if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
-  return `$${value}`;
-}
-
 export function BudgetVsRatingChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ngân sách vs Điểm số</CardTitle>
+        <CardTitle>Ngân sách lớn không đảm bảo điểm cao</CardTitle>
         <CardDescription>
-          Tương quan giữa chi phí sản xuất và chất lượng phim
+          Tương quan giữa chi phí sản xuất và chất lượng phim (điểm IMDb)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -64,25 +60,20 @@ export function BudgetVsRatingChart({ data }: Props) {
                 className="text-xs"
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length > 0) {
                     const d = payload[0].payload as BudgetVsRating;
                     return (
                       <div
                         style={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
+                          backgroundColor: "var(--card)",
+                          border: "1px solid var(--border)",
                           padding: "8px 12px",
                           borderRadius: "6px",
                           fontSize: "12px",
                         }}
                       >
-                        <p style={{ fontWeight: 600, color: "hsl(var(--foreground))" }}>
+                        <p style={{ fontWeight: 600, color: "var(--foreground)" }}>
                           {d.title} ({d.year})
                         </p>
                         <p>Ngân sách: {formatMoney(d.budget)}</p>
@@ -94,9 +85,10 @@ export function BudgetVsRatingChart({ data }: Props) {
                   return null;
                 }}
               />
+              <ReferenceLine y={7} stroke="var(--muted-foreground)" strokeDasharray="5 5" label={{ value: "Điểm 7.0", position: "right", fill: "var(--muted-foreground)", fontSize: 11 }} />
               <Scatter
                 data={data}
-                fill="hsl(var(--chart-1))"
+                fill={chartColors.categorical[0]}
                 fillOpacity={0.5}
               />
             </ScatterChart>

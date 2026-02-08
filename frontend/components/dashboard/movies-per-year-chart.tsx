@@ -16,6 +16,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { chartColors, tooltipStyle } from "@/lib/chart-theme";
 
 interface Props {
   data: { year: number; count: number }[];
@@ -25,9 +26,9 @@ export function MoviesPerYearChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Số lượng phim theo năm</CardTitle>
+        <CardTitle>Sản lượng phim tăng mạnh từ thập niên 2000</CardTitle>
         <CardDescription>
-          Xu hướng số lượng phim sản xuất qua từng năm
+          Số lượng phim phát hành mỗi năm từ 1950 đến nay
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -39,18 +40,32 @@ export function MoviesPerYearChart({ data }: Props) {
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="year" className="text-xs" />
-              <YAxis className="text-xs" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
+              <YAxis
+                className="text-xs"
+                label={{
+                  value: "Số phim",
+                  angle: -90,
+                  position: "insideLeft",
+                  style: {
+                    textAnchor: "middle",
+                    fill: "var(--muted-foreground)",
+                    fontSize: 12,
+                  },
                 }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+              />
+              <Tooltip
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
+                formatter={(value) => [
+                  Number(value).toLocaleString(),
+                  "Số phim",
+                ]}
+                labelFormatter={(label) => `Năm: ${label}`}
               />
               <Area
                 dataKey="count"
-                stroke="hsl(var(--chart-1))"
-                fill="hsl(var(--chart-1))"
+                stroke={chartColors.categorical[0]}
+                fill={chartColors.categorical[0]}
                 fillOpacity={0.3}
               />
             </AreaChart>

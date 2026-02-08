@@ -17,6 +17,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useMemo } from "react";
+import { chartColors, tooltipStyle } from "@/lib/chart-theme";
 
 interface GenreData {
   decade: number;
@@ -27,17 +28,6 @@ interface GenreData {
 interface Props {
   data: GenreData[];
 }
-
-const CHART_COLORS = [
-  "oklch(0.646 0.222 41.116)",
-  "oklch(0.6 0.118 184.704)",
-  "oklch(0.398 0.07 227.392)",
-  "oklch(0.828 0.189 84.429)",
-  "oklch(0.769 0.188 70.08)",
-  "hsl(220, 70%, 50%)",
-  "hsl(280, 65%, 60%)",
-  "hsl(340, 75%, 55%)",
-];
 
 export function GenreShareChart({ data }: Props) {
   const { chartData, topGenres } = useMemo(() => {
@@ -81,8 +71,8 @@ export function GenreShareChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Xu hướng thể loại qua các thập kỷ</CardTitle>
-        <CardDescription>Thị phần thể loại phim theo thập kỷ</CardDescription>
+        <CardTitle>Drama và Comedy dẫn đầu — cơ cấu thể loại qua thập kỷ</CardTitle>
+        <CardDescription>Thị phần top 8 thể loại phim theo từng thập kỷ</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
@@ -90,20 +80,17 @@ export function GenreShareChart({ data }: Props) {
             <AreaChart
               data={chartData}
               margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              stackOffset="expand"
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="decade" className="text-xs" />
+              <XAxis dataKey="decade" className="text-xs" label={{ value: "Thập kỷ", position: "insideBottom", offset: -2, style: { fontSize: 11 } }} />
               <YAxis
-                tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
+                tickFormatter={(v) => `${v.toFixed(0)}%`}
                 className="text-xs"
+                label={{ value: "Thị phần (%)", angle: -90, position: "insideLeft", style: { fontSize: 11 } }}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(value) => `${Number(value).toFixed(1)}%`}
               />
               {topGenres.map((genre, i) => (
@@ -112,8 +99,8 @@ export function GenreShareChart({ data }: Props) {
                   type="monotone"
                   dataKey={genre}
                   stackId="1"
-                  stroke={CHART_COLORS[i]}
-                  fill={CHART_COLORS[i]}
+                  stroke={chartColors.categorical[i % chartColors.categorical.length]}
+                  fill={chartColors.categorical[i % chartColors.categorical.length]}
                   fillOpacity={0.8}
                 />
               ))}
@@ -125,7 +112,7 @@ export function GenreShareChart({ data }: Props) {
             <div key={genre} className="flex items-center gap-1 text-xs">
               <div
                 className="w-3 h-3 rounded"
-                style={{ backgroundColor: CHART_COLORS[i] }}
+                style={{ backgroundColor: chartColors.categorical[i % chartColors.categorical.length] }}
               />
               <span>{genre}</span>
             </div>

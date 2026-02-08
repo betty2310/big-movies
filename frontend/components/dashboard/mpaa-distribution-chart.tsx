@@ -3,18 +3,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import type { MPAADistribution } from "@/lib/api";
+import { chartColors, tooltipStyle } from "@/lib/chart-theme";
 
 interface Props {
   data: MPAADistribution[];
 }
-
-const COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-];
 
 export function MPAADistributionChart({ data }: Props) {
   const topData = data.slice(0, 5);
@@ -22,8 +15,8 @@ export function MPAADistributionChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>MPAA Rating Distribution</CardTitle>
-        <CardDescription>Movies by content rating</CardDescription>
+        <CardTitle>Phân bố phân loại MPAA</CardTitle>
+        <CardDescription>Số lượng phim theo phân loại nội dung</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
@@ -39,12 +32,12 @@ export function MPAADistributionChart({ data }: Props) {
                 label={({ name }) => name}
               >
                 {topData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={chartColors.categorical[index % chartColors.categorical.length]} />
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                formatter={(value) => [Number(value).toLocaleString(), "Movies"]}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                formatter={(value) => [Number(value).toLocaleString(), "Số phim"]}
               />
               <Legend />
             </PieChart>

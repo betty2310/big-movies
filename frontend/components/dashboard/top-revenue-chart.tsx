@@ -16,8 +16,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
+import { chartColors, tooltipStyle, formatMoney } from "@/lib/chart-theme";
 
 interface TopRevenueMovie {
   movie_id: number;
@@ -36,17 +36,10 @@ interface Props {
   dataKey?: "revenue" | "budget" | "profit";
 }
 
-function formatMoney(value: number): string {
-  if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
-  if (Math.abs(value) >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
-  return `$${value}`;
-}
-
 export function TopRevenueChart({
   data,
-  title = "Top doanh thu phòng vé",
-  description = "Những bộ phim có doanh thu cao nhất",
+  title = "Top phim doanh thu cao nhất mọi thời đại",
+  description = "Xếp hạng phim theo doanh thu phòng vé toàn cầu",
   dataKey = "revenue",
 }: Props) {
   const chartData = useMemo(
@@ -86,21 +79,15 @@ export function TopRevenueChart({
                 tick={{ fontSize: 11 }}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(value) => [formatMoney(Number(value)), dataKey === "revenue" ? "Doanh thu" : dataKey === "budget" ? "Ngân sách" : "Lợi nhuận"]}
               />
-              <Bar dataKey={dataKey} radius={[0, 4, 4, 0]}>
-                {chartData.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={`hsl(var(--chart-${(index % 5) + 1}))`}
-                  />
-                ))}
-              </Bar>
+              <Bar
+                dataKey={dataKey}
+                fill={dataKey === "profit" ? chartColors.positive : chartColors.categorical[0]}
+                radius={[0, 4, 4, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>

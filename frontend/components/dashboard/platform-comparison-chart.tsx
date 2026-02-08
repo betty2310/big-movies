@@ -18,15 +18,31 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { chartColors, tooltipStyle } from "@/lib/chart-theme";
 
 interface Props {
   data: { year: number; imdb_avg: number; tmdb_avg: number; ml_avg: number }[];
 }
 
 const PLATFORMS = [
-  { key: "imdb_avg", name: "IMDb", color: "red" },
-  { key: "tmdb_avg", name: "TMDB", color: "green" },
-  { key: "ml_avg", name: "MovieLens", color: "blue" },
+  {
+    key: "imdb_avg",
+    name: "IMDb",
+    color: chartColors.categorical[0],
+    dash: "",
+  },
+  {
+    key: "tmdb_avg",
+    name: "TMDB",
+    color: chartColors.categorical[1],
+    dash: "",
+  },
+  {
+    key: "ml_avg",
+    name: "MovieLens",
+    color: chartColors.categorical[2],
+    dash: "",
+  },
 ] as const;
 
 export function PlatformComparisonChart({ data }: Props) {
@@ -48,9 +64,12 @@ export function PlatformComparisonChart({ data }: Props) {
   return (
     <Card className="col-span-2">
       <CardHeader>
-        <CardTitle>So sánh điểm số giữa các nền tảng</CardTitle>
+        <CardTitle>
+          Điểm trung bình hội tụ giữa các nền tảng theo thời gian
+        </CardTitle>
         <CardDescription>
-          Điểm trung bình theo năm trên IMDb, TMDB và MovieLens
+          So sánh điểm trung bình hằng năm trên IMDb, TMDB và MovieLens (thang
+          10)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -78,13 +97,23 @@ export function PlatformComparisonChart({ data }: Props) {
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="year" className="text-xs" />
-              <YAxis domain={[0, 10]} className="text-xs" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
+              <YAxis
+                domain={[0, 10]}
+                className="text-xs"
+                label={{
+                  value: "Điểm (0–10)",
+                  angle: -90,
+                  position: "insideLeft",
+                  style: {
+                    textAnchor: "middle",
+                    fill: "var(--muted-foreground)",
+                    fontSize: 12,
+                  },
                 }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+              />
+              <Tooltip
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(value, name) => [Number(value).toFixed(2), name]}
                 labelFormatter={(label) => `Năm: ${label}`}
               />
@@ -97,6 +126,7 @@ export function PlatformComparisonChart({ data }: Props) {
                   name={platform.name}
                   stroke={platform.color}
                   strokeWidth={2}
+                  strokeDasharray={platform.dash}
                   dot={false}
                   hide={!visiblePlatforms[platform.key]}
                 />

@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends
 from asyncpg import Connection
+from fastapi import APIRouter, Depends
 
 from app.database import get_db
 
@@ -21,7 +21,7 @@ async def get_rating_distribution(
 
     rows = await db.fetch(
         f"""
-        SELECT 
+        SELECT
             FLOOR({column})::int as bin,
             COUNT(*) as count
         FROM fact_movie_metrics
@@ -42,7 +42,7 @@ async def get_platform_comparison(
     """Compare average ratings across platforms by year"""
     rows = await db.fetch(
         """
-        SELECT 
+        SELECT
             m.year,
             AVG(f.imdb_rating) as imdb_avg,
             AVG(f.tmdb_rating) as tmdb_avg,
@@ -66,16 +66,16 @@ async def get_cult_classics(
     limit: int = 50,
     db: Connection = Depends(get_db),
 ):
-    """Hidden gems: high rating but low vote count"""
+    """Hidden gems: high rating but low vote count (>1000)"""
     rows = await db.fetch(
         """
         SELECT m.movie_id, m.title, m.year, m.poster_url,
                f.imdb_rating, f.imdb_votes, f.tmdb_rating
         FROM dim_movie m
         JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
-        WHERE f.imdb_rating >= $1 
+        WHERE f.imdb_rating >= $1
           AND f.imdb_votes <= $2
-          AND f.imdb_votes > 0
+          AND f.imdb_votes > 1000
         ORDER BY f.imdb_rating DESC, f.imdb_votes ASC
         LIMIT $3
         """,
@@ -97,7 +97,7 @@ async def get_runtime_vs_rating(
         SELECT m.runtime, f.imdb_rating as rating
         FROM dim_movie m
         JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
-        WHERE m.runtime IS NOT NULL 
+        WHERE m.runtime IS NOT NULL
           AND m.runtime BETWEEN 30 AND 300
           AND f.imdb_rating IS NOT NULL
         ORDER BY RANDOM()

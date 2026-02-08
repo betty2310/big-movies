@@ -16,9 +16,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
   ErrorBar,
 } from "recharts";
+import { chartColors, tooltipStyle, formatMoney } from "@/lib/chart-theme";
 
 interface GenreProfitability {
   genre_name: string;
@@ -31,12 +31,6 @@ interface GenreProfitability {
 
 interface Props {
   data: GenreProfitability[];
-}
-
-function formatMoney(value: number): string {
-  if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
-  return `$${value}`;
 }
 
 export function GenreProfitabilityChart({ data }: Props) {
@@ -52,7 +46,7 @@ export function GenreProfitabilityChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Lợi nhuận theo thể loại</CardTitle>
+        <CardTitle>Lợi nhuận theo thể loại kèm độ biến thiên</CardTitle>
         <CardDescription>
           ROI trung vị với khoảng tứ phân vị (P25–P75) — đánh giá rủi ro đầu tư
         </CardDescription>
@@ -63,13 +57,14 @@ export function GenreProfitabilityChart({ data }: Props) {
             <BarChart
               data={chartData}
               layout="vertical"
-              margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
+              margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 type="number"
                 className="text-xs"
                 tickFormatter={(v) => `${v}x`}
+                label={{ value: "ROI trung vị (x)", position: "insideBottom", offset: -5, style: { fill: "var(--muted-foreground)", fontSize: 11 } }}
               />
               <YAxis
                 type="category"
@@ -78,11 +73,8 @@ export function GenreProfitabilityChart({ data }: Props) {
                 width={90}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(_value: number | undefined, _name: string | undefined, props) => {
                   const item = props.payload as GenreProfitability & { errorX: number[] };
                   return [
@@ -91,14 +83,8 @@ export function GenreProfitabilityChart({ data }: Props) {
                   ];
                 }}
               />
-              <Bar dataKey="median_roi" radius={[0, 4, 4, 0]}>
-                <ErrorBar dataKey="errorX" width={4} strokeWidth={2} stroke="hsl(var(--foreground))" direction="x" />
-                {chartData.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={`hsl(var(--chart-${(index % 5) + 1}))`}
-                  />
-                ))}
+              <Bar dataKey="median_roi" fill={chartColors.categorical[1]} radius={[0, 4, 4, 0]}>
+                <ErrorBar dataKey="errorX" width={4} strokeWidth={2} stroke="var(--foreground)" direction="x" />
               </Bar>
             </BarChart>
           </ResponsiveContainer>

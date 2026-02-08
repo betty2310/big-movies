@@ -14,8 +14,8 @@ export function TopRatedTable({ actors, directors }: Props) {
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Diễn viên có điểm cao nhất</CardTitle>
-          <CardDescription>Điểm trung bình IMDb (tối thiểu 5 phim)</CardDescription>
+          <CardTitle>Diễn viên được đánh giá cao nhất (≥ 5 phim)</CardTitle>
+          <CardDescription>Điểm trung bình IMDb của các phim tham gia (tối thiểu 5 phim)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -32,7 +32,7 @@ export function TopRatedTable({ actors, directors }: Props) {
                   <p className="font-medium truncate">{person.name}</p>
                   <p className="text-xs text-muted-foreground">{person.movie_count} phim</p>
                 </div>
-                <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                <div className="text-sm font-bold text-chart-positive">
                   ⭐ {person.avg_rating.toFixed(1)}
                 </div>
               </Link>
@@ -43,8 +43,8 @@ export function TopRatedTable({ actors, directors }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Đạo diễn có điểm cao nhất</CardTitle>
-          <CardDescription>Điểm trung bình IMDb (tối thiểu 5 phim)</CardDescription>
+          <CardTitle>Đạo diễn được đánh giá cao nhất (≥ 5 phim)</CardTitle>
+          <CardDescription>Điểm trung bình IMDb các phim đã đạo diễn (tối thiểu 5 phim)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -61,7 +61,7 @@ export function TopRatedTable({ actors, directors }: Props) {
                   <p className="font-medium truncate">{person.name}</p>
                   <p className="text-xs text-muted-foreground">{person.movie_count} phim</p>
                 </div>
-                <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                <div className="text-sm font-bold text-chart-positive">
                   ⭐ {person.avg_rating.toFixed(1)}
                 </div>
               </Link>

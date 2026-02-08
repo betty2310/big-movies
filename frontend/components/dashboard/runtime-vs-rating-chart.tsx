@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { chartColors, tooltipStyle } from "@/lib/chart-theme";
 
 interface Props {
   data: { runtime: number; rating: number }[];
@@ -11,8 +12,8 @@ export function RuntimeVsRatingChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tương quan thời lượng & điểm số</CardTitle>
-        <CardDescription>Mối quan hệ giữa độ dài phim và chất lượng</CardDescription>
+        <CardTitle>Thời lượng dài hơn không đồng nghĩa điểm cao hơn</CardTitle>
+        <CardDescription>Tương quan giữa thời lượng phim (phút) và điểm IMDb</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
@@ -34,18 +35,20 @@ export function RuntimeVsRatingChart({ data }: Props) {
                 className="text-xs"
               />
               <Tooltip
-                contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(value, name) => {
                   const v = Number(value);
                   if (name === "runtime") return [`${v} phút`, "Thời lượng"];
                   return [v.toFixed(1), "Điểm"];
                 }}
               />
+              <ReferenceLine x={120} stroke="var(--muted-foreground)" strokeDasharray="5 5" label={{ value: "120 phút", position: "top", fill: "var(--muted-foreground)", fontSize: 11 }} />
+              <ReferenceLine y={7} stroke="var(--muted-foreground)" strokeDasharray="5 5" label={{ value: "Điểm 7.0", position: "right", fill: "var(--muted-foreground)", fontSize: 11 }} />
               <Scatter
                 data={data}
-                fill="hsl(var(--chart-1))"
-                fillOpacity={0.5}
+                fill={chartColors.categorical[0]}
+                fillOpacity={0.4}
               />
             </ScatterChart>
           </ResponsiveContainer>

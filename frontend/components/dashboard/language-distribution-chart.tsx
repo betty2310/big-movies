@@ -8,18 +8,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
+import { chartColors, tooltipStyle } from "@/lib/chart-theme";
 
 interface Props {
   data: { language: string; count: number }[];
 }
-
-const COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-];
 
 interface TreemapContentProps {
   x: number;
@@ -28,6 +21,7 @@ interface TreemapContentProps {
   height: number;
   index: number;
   name: string;
+  size: number;
 }
 
 function CustomContent({
@@ -37,6 +31,7 @@ function CustomContent({
   height,
   index,
   name,
+  size,
 }: TreemapContentProps) {
   return (
     <g>
@@ -45,20 +40,33 @@ function CustomContent({
         y={y}
         width={width}
         height={height}
-        fill={COLORS[index % COLORS.length]}
-        stroke="hsl(var(--background))"
+        fill={chartColors.categorical[index % chartColors.categorical.length]}
+        stroke="var(--background)"
         strokeWidth={2}
       />
-      {width > 50 && height > 30 && (
+      {width > 50 && height > 25 && (
         <text
-          x={x + width / 2}
-          y={y + height / 2}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="hsl(var(--card-foreground))"
-          className="text-xs font-medium"
+          x={x + 8}
+          y={y + 20}
+          textAnchor="start"
+          dominantBaseline="auto"
+          fill="var(--card-foreground)"
+          className="text-sm font-semibold"
         >
           {name}
+        </text>
+      )}
+      {width > 60 && height > 45 && (
+        <text
+          x={x + 8}
+          y={y + 38}
+          textAnchor="start"
+          dominantBaseline="auto"
+          fill="var(--card-foreground)"
+          className="text-xs"
+          opacity={0.7}
+        >
+          {`${(size as number).toLocaleString()} phim`}
         </text>
       )}
     </g>
@@ -74,18 +82,17 @@ export function LanguageDistributionChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Phân bố ngôn ngữ</CardTitle>
-        <CardDescription>Tỷ lệ phim theo ngôn ngữ gốc</CardDescription>
+        <CardTitle>Tiếng Anh chiếm đa số — phân bố ngôn ngữ phim</CardTitle>
+        <CardDescription>
+          Tỷ lệ phim theo ngôn ngữ gốc (kích thước tỷ lệ với số phim)
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
+        <div className="h-[500px]">
           <ResponsiveContainer width="100%" height="100%">
             <Treemap data={treemapData} dataKey="size" nameKey="name">
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
                 formatter={(value) => [
                   Number(value).toLocaleString(),
                   "Số phim",

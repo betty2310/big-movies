@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
+import { chartColors, tooltipStyle } from "@/lib/chart-theme";
 
 interface Props {
   data: { bin: number; count: number }[];
@@ -27,8 +28,8 @@ export function RatingDistributionChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Phân phối điểm đánh giá</CardTitle>
-        <CardDescription>Số lượng phim theo thang điểm IMDb</CardDescription>
+        <CardTitle>Phần lớn phim tập trung ở mức điểm IMDb 6–7</CardTitle>
+        <CardDescription>Phân phối số lượng phim theo thang điểm IMDb</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
@@ -36,26 +37,38 @@ export function RatingDistributionChart({ data }: Props) {
             <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="bin" className="text-xs" />
-              <YAxis className="text-xs" />
+              <YAxis
+                className="text-xs"
+                label={{
+                  value: "Số phim",
+                  angle: -90,
+                  position: "insideLeft",
+                  style: {
+                    textAnchor: "middle",
+                    fill: "var(--muted-foreground)",
+                    fontSize: 12,
+                  },
+                }}
+              />
               <Tooltip
-                contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(value) => [Number(value).toLocaleString(), "Số phim"]}
                 labelFormatter={(label) => `Điểm: ${label}`}
               />
               <ReferenceLine
                 x={averageRating.toFixed(1)}
-                stroke="hsl(var(--chart-3))"
+                stroke={chartColors.warning}
                 strokeDasharray="5 5"
                 strokeWidth={2}
                 label={{
                   value: `TB: ${averageRating.toFixed(1)}`,
                   position: "top",
-                  fill: "hsl(var(--chart-3))",
+                  fill: chartColors.warning,
                   fontSize: 12,
                 }}
               />
-              <Bar dataKey="count" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill={chartColors.categorical[1]} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

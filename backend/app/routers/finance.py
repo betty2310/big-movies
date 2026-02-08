@@ -305,16 +305,18 @@ async def get_value_frontier(
     db: Connection = Depends(get_db),
 ):
     """Movies with best combination of high rating and high ROI (value score)"""
+    budget_floor = max(min_budget, 10000)
     conditions = [
-        "f.budget IS NOT NULL AND f.budget > 0",
+        "f.budget IS NOT NULL",
         "f.revenue IS NOT NULL AND f.revenue > 0",
         "f.imdb_rating IS NOT NULL",
         "m.year BETWEEN $1 AND $2",
+        f"f.budget >= ${3}",
     ]
-    params: list = [start_year, end_year]
-    idx = 3
+    params: list = [start_year, end_year, budget_floor]
+    idx = 4
 
-    if min_budget > 0:
+    if min_budget > budget_floor:
         conditions.append(f"f.budget >= ${idx}")
         params.append(min_budget)
         idx += 1
@@ -338,9 +340,9 @@ async def get_value_frontier(
         f"""
         SELECT m.movie_id, m.title, m.year, m.poster_url,
                f.budget, f.revenue,
-               ROUND((f.revenue::numeric / NULLIF(f.budget, 0)), 2) AS revenue_multiple,
+               ROUND(LEAST(f.revenue::numeric / NULLIF(f.budget, 0), 10000), 2) AS revenue_multiple,
                f.imdb_rating,
-               ROUND((f.imdb_rating * LN(1 + f.revenue::numeric / NULLIF(f.budget, 0)))::numeric, 2) AS value_score
+               ROUND((f.imdb_rating * LN(1 + LEAST(f.revenue::numeric / NULLIF(f.budget, 0), 10000)))::numeric, 2) AS value_score
         FROM dim_movie m
         JOIN fact_movie_metrics f ON m.movie_id = f.movie_id
         WHERE {where}

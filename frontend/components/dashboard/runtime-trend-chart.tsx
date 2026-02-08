@@ -15,7 +15,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
+import { chartColors, tooltipStyle } from "@/lib/chart-theme";
 
 interface RuntimeTrend {
   year: number;
@@ -31,9 +33,9 @@ export function RuntimeTrendChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Xu hướng thời lượng phim</CardTitle>
+        <CardTitle>Thời lượng trung bình phim tăng nhẹ theo thời gian</CardTitle>
         <CardDescription>
-          Độ dài trung bình của phim qua các năm
+          Độ dài trung bình của phim qua các năm (đơn vị: phút)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -45,13 +47,14 @@ export function RuntimeTrendChart({ data }: Props) {
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="year" className="text-xs" />
-              <YAxis className="text-xs" unit=" phút" />
+              <YAxis
+                className="text-xs"
+                unit=" phút"
+                label={{ value: "Phút", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "var(--muted-foreground)", fontSize: 12 } }}
+              />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "green",
-                  border: "1px solid hsl(var(--border))",
-                }}
-                labelStyle={{ color: "black" }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(value, _name, props) => {
                   const payload = props.payload as RuntimeTrend;
                   return [
@@ -60,13 +63,14 @@ export function RuntimeTrendChart({ data }: Props) {
                   ];
                 }}
               />
+              <ReferenceLine y={90} stroke="var(--muted-foreground)" strokeDasharray="5 5" label={{ value: "90 phút", position: "right", fill: "var(--muted-foreground)", fontSize: 11 }} />
               <Line
                 type="monotone"
                 dataKey="avg_runtime"
-                stroke="black"
+                stroke={chartColors.categorical[1]}
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 6, fill: "red" }}
+                activeDot={{ r: 6, fill: chartColors.categorical[0] }}
               />
             </LineChart>
           </ResponsiveContainer>

@@ -20,9 +20,9 @@ export function TopProlificTable({ actors, directors }: Props) {
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Diễn viên đóng nhiều phim nhất</CardTitle>
+          <CardTitle>Diễn viên xuất hiện nhiều nhất trên màn ảnh</CardTitle>
           <CardDescription>
-            Xếp hạng theo số lượng phim tham gia
+            Xếp hạng diễn viên theo tổng số phim tham gia
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -50,9 +50,9 @@ export function TopProlificTable({ actors, directors }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Đạo diễn nhiều phim nhất</CardTitle>
+          <CardTitle>Đạo diễn có sản lượng phim cao nhất</CardTitle>
           <CardDescription>
-            Xếp hạng theo số lượng phim đạo diễn
+            Xếp hạng đạo diễn theo tổng số phim đã đạo diễn
           </CardDescription>
         </CardHeader>
         <CardContent>

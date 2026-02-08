@@ -59,8 +59,8 @@ export default async function DashboardPage() {
     api.overview.topPopular(10),
     api.overview.languageDistribution(),
     api.ratings.distribution("imdb"),
-    api.ratings.platformComparison(1970, 2022),
-    api.ratings.cultClassics(15),
+    api.ratings.platformComparison(1970, 2023),
+    api.ratings.cultClassics(8),
     api.ratings.runtimeVsRating(500),
     api.genres.shareByDecade(),
     api.genres.averageRating(),
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
   const platformComparison_ = platformComparison.map((p) => ({
     year: p.year,
     imdb_avg: p.imdb_avg,
-    tmdb_avg: p.tmdb_avg,
+    tmdb_avg: p.tmdb_avg * 2,
     ml_avg: p.ml_avg * 2,
   }));
 
@@ -103,169 +103,247 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold">🎬 Big Movies Dashboard</h1>
+        <div className="mx-auto max-w-[1600px] px-2 py-6">
+          <h1 className="text-3xl font-bold">🎬 Big Movies</h1>
           <p className="text-muted-foreground">
-            Trực quan hóa dữ liệu phim từ MovieLens, IMDb, TMDB & Rotten
-            Tomatoes
+            Hành trình tìm các bộ phim trong 75 năm — dữ liệu từ MovieLens,
+            IMDb, TMDB &amp; Rotten Tomatoes
           </p>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-12">
-        {/* Stats Overview */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Tổng số phim
-              </CardTitle>
-              <Film className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {totalMovies.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">Từ năm 1950-2025</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Điểm trung bình
-              </CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{avgRating.toFixed(1)}</div>
-              <p className="text-xs text-muted-foreground">Thang điểm IMDb</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Năm đỉnh cao
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{topYear.year}</div>
-              <p className="text-xs text-muted-foreground">
-                {topYear.count.toLocaleString()} phim
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Số ngôn ngữ</CardTitle>
-              <Globe className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalLanguages}</div>
-              <p className="text-xs text-muted-foreground">Ngôn ngữ gốc</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Section 1: Market Overview */}
+      <main className="mx-auto max-w-[1600px] px-2 py-8 space-y-12">
+        {/* ═══════════════════════════════════════════════════════════════
+            ACT I · INTRODUCTION
+            "Điện ảnh bùng nổ về số lượng và đa dạng ngôn ngữ"
+        ═══════════════════════════════════════════════════════════════ */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">📊 Tổng quan thị trường</h2>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <MoviesPerYearChart data={moviesPerYear} />
-            <LanguageDistributionChart data={languageDistribution} />
+          <h2 className="text-2xl font-bold mb-2">
+            🌍 Chương 1 — Điện ảnh bùng nổ về số lượng và đa dạng ngôn ngữ
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Thị trường phim đã phình to ra sao trong 75 năm qua? Bao nhiêu phim,
+            bao nhiêu ngôn ngữ, và đỉnh điểm nằm ở đâu?
+          </p>
+
+          {/* 1. Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Tổng số phim
+                </CardTitle>
+                <Film className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {totalMovies.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Từ năm 1950-2025
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Điểm trung bình
+                </CardTitle>
+                <Star className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{avgRating.toFixed(1)}</div>
+                <p className="text-xs text-muted-foreground">Thang điểm IMDb</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Năm đỉnh cao
+                </CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{topYear.year}</div>
+                <p className="text-xs text-muted-foreground">
+                  {topYear.count.toLocaleString()} phim
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Số ngôn ngữ
+                </CardTitle>
+                <Globe className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalLanguages}</div>
+                <p className="text-xs text-muted-foreground">Ngôn ngữ gốc</p>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* 2. Movies Per Year */}
           <div className="mt-6">
-            <TopMoviesCard data={topMovies} />
+            <MoviesPerYearChart data={moviesPerYear} />
+          </div>
+
+          {/* 3. Language Distribution */}
+          <div className="mt-6">
+            <LanguageDistributionChart data={languageDistribution} />
           </div>
         </section>
 
-        {/* Section 2: Ratings & Reception */}
+        {/* ═══════════════════════════════════════════════════════════════
+            ACT II · RISING ACTION
+            "Rating không chỉ là một con số"
+        ═══════════════════════════════════════════════════════════════ */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">⭐ Chất lượng & Đánh giá</h2>
+          <h2 className="text-2xl font-bold mb-2">
+            ⭐ Chương 2 — Rating không chỉ là một con số
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Phim &ldquo;hay&rdquo; là hay theo nghĩa nào? Rating phân bố ra sao,
+            thời gian phim có liên quan không, và tại sao các nền tảng chấm điểm
+            khác nhau?
+          </p>
+
+          {/* 4. Rating Distribution */}
           <div className="grid gap-6 lg:grid-cols-2">
             <RatingDistributionChart data={ratingDistribution} />
+            {/* 5. Runtime vs Rating */}
             <RuntimeVsRatingChart data={runtimeVsRating} />
           </div>
+
+          {/* 6. Platform Comparison */}
           <div className="mt-6">
             <PlatformComparisonChart data={platformComparison_} />
           </div>
-          <div className="mt-6">
-            <CultClassicsTable data={cultClassics} />
-          </div>
         </section>
 
-        {/* Section 3: Genre Evolution */}
+        {/* ═══════════════════════════════════════════════════════════════
+            ACT III · CLIMAX
+            "Phim 'đáng xem' nhất nằm ở giao điểm: rating cao + ROI cao"
+        ═══════════════════════════════════════════════════════════════ */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">🎭 Xu hướng thể loại</h2>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <GenreShareChart data={genreShare} />
-            <GenreRatingChart data={genreRating} />
-          </div>
-          <div className="mt-6">
-            <GenreCoOccurrenceTable data={genreCoOccurrence_} />
-          </div>
-        </section>
+          <h2 className="text-2xl font-bold mb-2">
+            💎 Chương 3 — Phim vừa hay vừa sinh lời
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Ngân sách tăng, doanh thu tăng — nhưng ROI (
+            <span className="font-bold">Return on Investment</span>) lại biến
+            động. Đâu là nhóm phim tối ưu, vừa được đánh giá cao vừa thu hồi vốn
+            gấp bội?
+          </p>
 
-        {/* Section 4: People Analytics */}
-        <section>
-          <h2 className="text-2xl font-bold mb-6">👥 Phân tích nhân sự</h2>
-          <TopProlificTable
-            actors={topProlificActors}
-            directors={topProlificDirectors}
-          />
-          <div className="mt-6">
-            <TopRatedTable
-              actors={topRatedActors}
-              directors={topRatedDirectors}
-            />
-          </div>
-          <div className="mt-6">
-            <ActorNetworkTable data={actorNetwork} />
-          </div>
-        </section>
+          {/* 7. Profitability Trend — bối cảnh tài chính */}
+          <ProfitabilityTrendChart data={profitabilityTrend} />
 
-        {/* Section 5: Finance & Box Office */}
-        <section>
-          <h2 className="text-2xl font-bold mb-6">💰 Tài chính & Phòng vé</h2>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <TopRevenueChart data={topRevenue} />
+          {/* 8. ROI Leaderboard */}
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            {/* 10. Top Profit */}
             <TopRevenueChart
               data={topProfit}
               title="Top lợi nhuận"
               description="Những bộ phim có lợi nhuận cao nhất"
               dataKey="profit"
             />
+            <div className="grid gap-6">
+              {/* 9. Top Revenue */}
+              <TopRevenueChart data={topRevenue} />
+            </div>
           </div>
-          <div className="mt-6">
-            <ProfitabilityTrendChart data={profitabilityTrend} />
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            ACT IV · FALLING ACTION
+            "Thể loại, công thức kết hợp và star power là động cơ phía sau"
+        ═══════════════════════════════════════════════════════════════ */}
+        <section>
+          <h2 className="text-2xl font-bold mb-2">
+            🎭 Chương 4 — Vì sao những phim đó thắng? Vai trò của thể loại và
+            star power
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Thể loại nào vừa hay vừa lời? Chi nhiều hơn có phải lúc nào cũng tốt
+            hơn? Và ngôi sao nào thực sự tạo ra giá trị?
+          </p>
+
+          {/* 12. Genre Share by Decade */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <GenreShareChart data={genreShare} />
+            {/* 13. Runtime Trend */}
+            <RuntimeTrendChart data={runtimeTrend} />
           </div>
+
+          {/* 14. Genre Rating + 15. Genre Profitability */}
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <ROILeaderboardChart data={roiLeaderboard} />
+            <GenreRatingChart data={genreRating} />
             <GenreProfitabilityChart data={genreProfitability} />
           </div>
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+
+          {/* 16. Genre Co-Occurrence */}
+          <div className="mt-6">
+            <GenreCoOccurrenceTable data={genreCoOccurrence_} />
+          </div>
+
+          {/* 17. Budget vs Rating */}
+          <div className="mt-6">
             <BudgetVsRatingChart data={budgetVsRating} />
           </div>
+
+          {/* 18. Star Power ROI */}
           <div className="mt-6">
             <StarPowerROIChart
               actors={starPowerActors}
               directors={starPowerDirectors}
             />
           </div>
-          <div className="mt-6">
-            <ValueFrontierChart data={valueFrontier} />
-          </div>
         </section>
 
-        {/* Section 6: Temporal Features */}
+        {/* ═══════════════════════════════════════════════════════════════
+            ACT V · DENOUEMENT
+            "Danh sách khám phá: xem gì, theo ai, và săn hidden gems"
+            Mục tiêu: Call-to-action, kết nhẹ
+        ═══════════════════════════════════════════════════════════════ */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">⏱️ Phân tích thời gian</h2>
-          <RuntimeTrendChart data={runtimeTrend} />
+          <h2 className="text-2xl font-bold mb-2">
+            🔍 Chương 5 — Bạn nên xem gì tiếp và theo dõi ai?
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Từ insight đến hành động: những người làm phim đáng theo dõi, mạng
+            lưới cộng tác, hidden gems chờ khám phá, và top phim phổ biến nhất.
+          </p>
+
+          {/* 19. Top Prolific */}
+          <TopProlificTable
+            actors={topProlificActors}
+            directors={topProlificDirectors}
+          />
+
+          {/* 20. Top Rated */}
+          <div className="mt-6">
+            <TopRatedTable
+              actors={topRatedActors}
+              directors={topRatedDirectors}
+            />
+          </div>
+
+          {/* 22. Cult Classics — Hidden Gems */}
+          <div className="mt-6">
+            <CultClassicsTable data={cultClassics} />
+          </div>
+
+          {/* 23. Top Movies — điểm chốt nhẹ */}
+          <div className="mt-6">
+            <TopMoviesCard data={topMovies} />
+          </div>
         </section>
       </main>
 
       <footer className="border-t py-6 mt-12">
-        <div className="container mx-auto px-4 text-center text-muted-foreground text-sm">
+        <div className="mx-auto max-w-[1600px] px-2 text-center text-muted-foreground text-sm">
           Big Movies Analytics Dashboard • Dữ liệu từ MovieLens, IMDb, TMDB,
           Rotten Tomatoes
         </div>

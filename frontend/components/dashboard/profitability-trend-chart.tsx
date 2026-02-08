@@ -18,6 +18,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { chartColors, tooltipStyle, formatMoney } from "@/lib/chart-theme";
 
 interface ProfitabilityTrend {
   year: number;
@@ -32,17 +33,11 @@ interface Props {
   data: ProfitabilityTrend[];
 }
 
-function formatMoney(value: number): string {
-  if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
-  return `$${value}`;
-}
-
 const SERIES = [
-  { key: "avg_revenue", name: "Doanh thu TB", color: "hsl(142, 71%, 45%)" },
-  { key: "avg_budget", name: "Ngân sách TB", color: "hsl(0, 84%, 60%)" },
-  { key: "avg_profit", name: "Lợi nhuận TB", color: "hsl(200, 70%, 50%)" },
-  { key: "median_roi", name: "ROI trung vị", color: "hsl(45, 93%, 47%)" },
+  { key: "avg_revenue", name: "Doanh thu TB", color: chartColors.positive },
+  { key: "avg_budget", name: "Ngân sách TB", color: chartColors.categorical[3] },
+  { key: "avg_profit", name: "Lợi nhuận TB", color: chartColors.neutral },
+  { key: "median_roi", name: "ROI trung vị", color: chartColors.warning },
 ] as const;
 
 export function ProfitabilityTrendChart({ data }: Props) {
@@ -60,9 +55,9 @@ export function ProfitabilityTrendChart({ data }: Props) {
   return (
     <Card className="col-span-2">
       <CardHeader>
-        <CardTitle>Xu hướng lợi nhuận theo năm</CardTitle>
+        <CardTitle>Ngân sách và doanh thu tăng, nhưng ROI trung vị biến động</CardTitle>
         <CardDescription>
-          Ngân sách, doanh thu, lợi nhuận trung bình và ROI trung vị qua từng năm
+          Xu hướng ngân sách, doanh thu, lợi nhuận trung bình và ROI trung vị theo năm
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -94,19 +89,18 @@ export function ProfitabilityTrendChart({ data }: Props) {
                 yAxisId="money"
                 className="text-xs"
                 tickFormatter={formatMoney}
+                label={{ value: "USD (trung bình)", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "var(--muted-foreground)", fontSize: 12 } }}
               />
               <YAxis
                 yAxisId="roi"
                 orientation="right"
                 className="text-xs"
                 tickFormatter={(v) => `${v}x`}
+                label={{ value: "ROI (x)", angle: 90, position: "insideRight", style: { textAnchor: "middle", fill: "var(--muted-foreground)", fontSize: 12 } }}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(value: number | undefined, name: string | undefined) => {
                   const v = value ?? 0;
                   if (name === "ROI trung vị") return [`${v.toFixed(2)}x`, name];
@@ -119,8 +113,8 @@ export function ProfitabilityTrendChart({ data }: Props) {
                 type="monotone"
                 dataKey="avg_revenue"
                 name="Doanh thu TB"
-                stroke="hsl(142, 71%, 45%)"
-                fill="hsl(142, 71%, 45%)"
+                stroke={chartColors.positive}
+                fill={chartColors.positive}
                 fillOpacity={0.1}
                 strokeWidth={2}
                 dot={false}
@@ -131,8 +125,8 @@ export function ProfitabilityTrendChart({ data }: Props) {
                 type="monotone"
                 dataKey="avg_budget"
                 name="Ngân sách TB"
-                stroke="hsl(0, 84%, 60%)"
-                fill="hsl(0, 84%, 60%)"
+                stroke={chartColors.categorical[3]}
+                fill={chartColors.categorical[3]}
                 fillOpacity={0.1}
                 strokeWidth={2}
                 dot={false}
@@ -143,7 +137,7 @@ export function ProfitabilityTrendChart({ data }: Props) {
                 type="monotone"
                 dataKey="avg_profit"
                 name="Lợi nhuận TB"
-                stroke="hsl(200, 70%, 50%)"
+                stroke={chartColors.neutral}
                 strokeWidth={2}
                 dot={false}
                 hide={!visible.avg_profit}
@@ -153,7 +147,7 @@ export function ProfitabilityTrendChart({ data }: Props) {
                 type="monotone"
                 dataKey="median_roi"
                 name="ROI trung vị"
-                stroke="hsl(45, 93%, 47%)"
+                stroke={chartColors.warning}
                 strokeWidth={2}
                 strokeDasharray="5 5"
                 dot={false}

@@ -16,7 +16,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  ReferenceLine,
 } from "recharts";
+import { chartColors, formatMoney } from "@/lib/chart-theme";
 
 interface ValueFrontierMovie {
   movie_id: number;
@@ -33,17 +35,11 @@ interface Props {
   data: ValueFrontierMovie[];
 }
 
-function formatMoney(value: number): string {
-  if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
-  return `$${value}`;
-}
-
 function getScoreColor(score: number, max: number): string {
   const ratio = score / max;
-  if (ratio > 0.7) return "hsl(142, 71%, 45%)";
-  if (ratio > 0.4) return "hsl(200, 70%, 50%)";
-  return "hsl(220, 60%, 60%)";
+  if (ratio > 0.7) return chartColors.positive;
+  if (ratio > 0.4) return chartColors.neutral;
+  return chartColors.warning;
 }
 
 export function ValueFrontierChart({ data }: Props) {
@@ -52,9 +48,9 @@ export function ValueFrontierChart({ data }: Props) {
   return (
     <Card className="col-span-2">
       <CardHeader>
-        <CardTitle>Biên giới giá trị (Value Frontier)</CardTitle>
+        <CardTitle>Phim &lsquo;đáng tiền&rsquo; — điểm cao và ROI cao tập trung ở đâu?</CardTitle>
         <CardDescription>
-          Phim tối ưu Pareto — kết hợp điểm cao & ROI cao (màu theo value_score)
+          Phim tối ưu Pareto — kết hợp điểm IMDb cao & ROI cao (màu theo value score)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -68,6 +64,7 @@ export function ValueFrontierChart({ data }: Props) {
                 name="ROI"
                 className="text-xs"
                 tickFormatter={(v) => `${v}x`}
+                label={{ value: "ROI (x)", position: "insideBottom", offset: -5, style: { fill: "var(--muted-foreground)", fontSize: 11 } }}
               />
               <YAxis
                 type="number"
@@ -75,6 +72,7 @@ export function ValueFrontierChart({ data }: Props) {
                 name="Điểm IMDb"
                 domain={[4, 10]}
                 className="text-xs"
+                label={{ value: "Điểm IMDb", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "var(--muted-foreground)", fontSize: 12 } }}
               />
               <Tooltip
                 content={({ active, payload }) => {
@@ -83,14 +81,14 @@ export function ValueFrontierChart({ data }: Props) {
                     return (
                       <div
                         style={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
+                          backgroundColor: "var(--card)",
+                          border: "1px solid var(--border)",
                           padding: "8px 12px",
                           borderRadius: "6px",
                           fontSize: "12px",
                         }}
                       >
-                        <p style={{ fontWeight: 600, color: "hsl(var(--foreground))" }}>
+                        <p style={{ fontWeight: 600, color: "var(--foreground)" }}>
                           {d.title} ({d.year})
                         </p>
                         <p>Điểm: {d.imdb_rating} — ROI: {d.revenue_multiple}x</p>
@@ -103,6 +101,8 @@ export function ValueFrontierChart({ data }: Props) {
                   return null;
                 }}
               />
+              <ReferenceLine x={1} stroke="var(--muted-foreground)" strokeDasharray="5 5" label={{ value: "Hòa vốn", position: "top", fill: "var(--muted-foreground)", fontSize: 11 }} />
+              <ReferenceLine y={7} stroke="var(--muted-foreground)" strokeDasharray="5 5" label={{ value: "Điểm 7.0", position: "right", fill: "var(--muted-foreground)", fontSize: 11 }} />
               <Scatter data={data}>
                 {data.map((entry, index) => (
                   <Cell

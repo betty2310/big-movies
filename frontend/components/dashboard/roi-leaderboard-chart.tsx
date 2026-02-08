@@ -17,7 +17,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  ReferenceLine,
 } from "recharts";
+import { chartColors, tooltipStyle, formatMoney } from "@/lib/chart-theme";
 
 interface ROIMovie {
   movie_id: number;
@@ -34,18 +36,11 @@ interface Props {
   data: ROIMovie[];
 }
 
-function formatMoney(value: number): string {
-  if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
-  if (Math.abs(value) >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
-  return `$${value}`;
-}
-
 function getROIColor(roi: number): string {
-  if (roi >= 10) return "hsl(142, 71%, 45%)";
-  if (roi >= 5) return "hsl(142, 60%, 55%)";
-  if (roi >= 2) return "hsl(200, 70%, 50%)";
-  return "hsl(220, 60%, 60%)";
+  if (roi >= 10) return chartColors.positive;
+  if (roi >= 5) return chartColors.neutral;
+  if (roi >= 2) return chartColors.warning;
+  return chartColors.categorical[3];
 }
 
 export function ROILeaderboardChart({ data }: Props) {
@@ -61,9 +56,9 @@ export function ROILeaderboardChart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bảng xếp hạng ROI</CardTitle>
+        <CardTitle>Phim nào thu hồi vốn gấp bội?</CardTitle>
         <CardDescription>
-          Phim có tỷ suất lợi nhuận cao nhất (doanh thu / ngân sách)
+          Xếp hạng theo tỷ suất lợi nhuận (doanh thu / ngân sách)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -72,13 +67,14 @@ export function ROILeaderboardChart({ data }: Props) {
             <BarChart
               data={chartData}
               layout="vertical"
-              margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
+              margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 type="number"
                 className="text-xs"
                 tickFormatter={(v) => `${v}x`}
+                label={{ value: "ROI (doanh thu / ngân sách)", position: "insideBottom", offset: -5, style: { fill: "var(--muted-foreground)", fontSize: 11 } }}
               />
               <YAxis
                 type="category"
@@ -88,11 +84,8 @@ export function ROILeaderboardChart({ data }: Props) {
                 tick={{ fontSize: 11 }}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                }}
-                labelStyle={{ color: "hsl(var(--foreground))" }}
+                contentStyle={{ ...tooltipStyle.contentStyle }}
+                labelStyle={{ ...tooltipStyle.labelStyle }}
                 formatter={(value, _name, props) => {
                   const item = props.payload as ROIMovie & { label: string };
                   return [
@@ -100,6 +93,12 @@ export function ROILeaderboardChart({ data }: Props) {
                     "ROI",
                   ];
                 }}
+              />
+              <ReferenceLine
+                x={1}
+                stroke="var(--muted-foreground)"
+                strokeDasharray="5 5"
+                label={{ value: "Hòa vốn (1x)", position: "top", fill: "var(--muted-foreground)", fontSize: 11 }}
               />
               <Bar dataKey="revenue_multiple" radius={[0, 4, 4, 0]}>
                 {chartData.map((entry, index) => (

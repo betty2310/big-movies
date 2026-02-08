@@ -18,7 +18,7 @@ async def get_genre_share_by_decade(db: Connection = Depends(get_db)):
         FROM dim_movie m
         JOIN bridge_movie_genres bg ON m.movie_id = bg.movie_id
         JOIN dim_genre g ON bg.genre_id = g.genre_id
-        WHERE m.year >= 1920
+        WHERE m.year >= 1920 AND m.year <= 2024
         GROUP BY decade, g.genre_name
         ORDER BY decade, count DESC
         """
