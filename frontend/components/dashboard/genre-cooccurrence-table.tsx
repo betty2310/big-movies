@@ -20,6 +20,25 @@ interface MatrixCell {
   opacity: number;
 }
 
+function CustomTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: MatrixCell }>;
+}) {
+  if (!active || !payload?.[0]) return null;
+  const cell = payload[0].payload;
+  return (
+    <div style={{ ...tooltipStyle.contentStyle, padding: "8px 12px" }}>
+      <p style={{ ...tooltipStyle.labelStyle, marginBottom: 4 }}>
+        {cell.genre1} × {cell.genre2}
+      </p>
+      <p style={{ fontSize: 12 }}>Số phim: {cell.count.toLocaleString()}</p>
+    </div>
+  );
+}
+
 export function GenreCoOccurrenceTable({ data }: Props) {
   const { cells, genres } = useMemo(() => {
     const genreSet = new Set<string>();
@@ -78,19 +97,6 @@ export function GenreCoOccurrenceTable({ data }: Props) {
         stroke="var(--background)"
         strokeWidth={1}
       />
-    );
-  };
-
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: MatrixCell }> }) => {
-    if (!active || !payload?.[0]) return null;
-    const cell = payload[0].payload;
-    return (
-      <div style={{ ...tooltipStyle.contentStyle, padding: "8px 12px" }}>
-        <p style={{ ...tooltipStyle.labelStyle, marginBottom: 4 }}>
-          {cell.genre1} × {cell.genre2}
-        </p>
-        <p style={{ fontSize: 12 }}>Số phim: {cell.count.toLocaleString()}</p>
-      </div>
     );
   };
 

@@ -1,4 +1,7 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "https://movies-be.betty2310.com/api";
+
+const DEFAULT_REVALIDATE_SECONDS = 300;
 
 async function fetchAPI<T>(
   endpoint: string,
@@ -12,7 +15,9 @@ async function fetchAPI<T>(
       }
     });
   }
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  const res = await fetch(url.toString(), {
+    next: { revalidate: DEFAULT_REVALIDATE_SECONDS },
+  });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
